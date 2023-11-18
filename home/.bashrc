@@ -185,7 +185,9 @@ fi
 
 # Add `~/bin` to my `PATH` variable to make programs in there executable
 export PATH="$HOME/bin:$PATH"
-
+# (2023-11-14, s-heppner)
+# Add `~/.local/bin` to the `PATH` variable
+export PATH="$HOME/.local/bin:$PATH"
 
 # (2023-08-29, s-heppner)
 # ANSI Variable Colors
