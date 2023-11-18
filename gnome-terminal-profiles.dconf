@@ -1,0 +1,22 @@
+[/]
+default='7169037e-90ee-4be0-8cb8-6bc292da5b2d'
+list=['b1dcc9dd-5262-4d8d-a863-c897e6d979b9', '7169037e-90ee-4be0-8cb8-6bc292da5b2d']
+
+[:7169037e-90ee-4be0-8cb8-6bc292da5b2d]
+background-color='rgb(0,0,0)'
+background-transparency-percent=10
+bold-color-same-as-fg=true
+cursor-colors-set=false
+foreground-color='rgb(236,239,244)'
+palette=['rgb(23,20,33)', 'rgb(192,28,40)', 'rgb(38,162,105)', 'rgb(162,115,76)', 'rgb(18,72,139)', 'rgb(163,71,186)', 'rgb(42,161,179)', 'rgb(208,207,204)', 'rgb(94,92,100)', 'rgb(246,97,81)', 'rgb(51,209,122)', 'rgb(233,173,12)', 'rgb(42,123,222)', 'rgb(192,97,203)', 'rgb(51,199,222)', 'rgb(255,255,255)']
+use-theme-colors=false
+use-transparent-background=true
+visible-name='Nord'
+
+[:b1dcc9dd-5262-4d8d-a863-c897e6d979b9]
+background-color='rgb(0,0,0)'
+background-transparency-percent=44
+foreground-color='rgb(255,255,255)'
+use-theme-colors=true
+use-transparent-background=false
+visible-name='Default'

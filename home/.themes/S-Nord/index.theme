@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=X-GNOME-Metatheme
+Name=S-Nord
+Comment=A personal Nord theme
+Encoding=UTF-8
+
+[X-GNOME-Metatheme]
+GtkTheme=S-Nord
+MetacityTheme=S-Nord
+IconTheme=Mint-Y
+CursorTheme=DMZ-Black
+ButtonLayout=menu:minimize,maximize,close

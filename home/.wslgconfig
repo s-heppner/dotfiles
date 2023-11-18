@@ -1,0 +1,6 @@
+# This is the configuration file for the WSL-GUI window manager
+
+# (2023-05-08, s-heppner)
+# This setting fixes scaling issues on screens that have windows scaling != 100%
+[system-distro-env]
+WESTON_RDP_DISABLE_FRACTIONAL_HI_DPI_SCALING=false
