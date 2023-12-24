@@ -12,6 +12,7 @@ echo "Deploy Desktop Environment"
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.icons ${HOME}/.icons
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.themes ${HOME}/.themes
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.cinnamon ${HOME}/.cinnamon
+./symlink_dotfile.sh ${DOTFILE_DIR}/wallpapers/wallpaper.jpg ${HOME}/Desktop/wallpaper.jpg
 dconf load /org/cinnamon/ < ${DOTFILE_DIR}/cinnamon.dconf
 
 # Deploy Gnome Terminal Profile
@@ -25,6 +26,10 @@ dconf load /org/gnome/terminal/legacy/profiles:/ < ${DOTFILE_DIR}/gnome-terminal
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.bashrc ${HOME}/.bashrc
 # Rofi
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.config/rofi ${HOME}/.config/rofi
+
+# TLP Power Management
+# SELinux does not like it if this is a symbolic link 
+# sudo ./symlink_dotfile.sh ${DOTFILE_DIR}/etc/tlp.conf /etc/tlp.conf
 
 # Convinience Scripts
 ./symlink_dotfile.sh ${DOTFILE_DIR}/sha256string.py ${HOME}/sha256string.py

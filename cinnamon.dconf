@@ -76,7 +76,7 @@ exec-arg='--'
 [desktop/background]
 color-shading-type='solid'
 picture-options='zoom'
-picture-uri='file:///home/sebastian/Desktop/langkovel_nord.png'
+picture-uri='file:///home/sebastian/Desktop/wallpaper.jpg'
 primary-color='#2e2e34343636'
 
 [desktop/background/slideshow]
