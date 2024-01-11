@@ -1,36 +1,33 @@
 #!/bin/bash
 
+# Execute via `curl -sSL https://raw.githubusercontent.com/s-heppner/dotfiles/main/deploy_scripts/setup.sh | bash`
 # This script sets up a machine to be able to 
 # deploy by
-#  - Creating an ssh-key for gitea
-#  - Adding the temporary ssh config
-#  - Pulling the dotfiles repository
+#  - Installing git
+#  - Pulling the dotfile repository
 
-echo "Prepare SSH"
-mkdir -p ~/.ssh/keys
-# Create a temporary ssh configuration
-cat <<EOF > ~/.ssh/config
-Host gitea
-  HostName s-heppner.com
-  HostKeyAlias gitea.s-heppner.com
-  Port 2222
-  IdentityFile ~/.ssh/keys/personal.gitea
-  User git
-EOF
-# Generate ssh key
-dateStr=$(date '+%Y-%m-%d')
-ssh-keygen -t ed25519 -a 420 -f ~/.ssh/keys/personal.gitea -C "${dateStr} personal.gitea $USER@$(hostname)"
+echo "Make sure that git is installed"
+if command -v git &> /dev/null; then
+    echo "Git is already installed."
+else
+    echo "Git is not installed. Installing..."
+    # Check which package manager is available
+    if command -v apt-get &> /dev/null; then
+        sudo apt-get update
+        sudo apt-get install -y git git-core bash-completion
+    elif command -v dnf &> /dev/null; then
+        sudo dnf install -y git
+    else
+        echo "Unsupported package manager. Please install Git manually."
+        exit 1
+    fi
+    echo "Git has been installed successfully."
+fi
 
-echo "The public key of personal.gitea is"
-cat ~/.ssh/keys/personal.gitea.pub
-
-echo "Please paste this into the allowed keys of git.s-heppner.com"
-echo "When you are done, please press enter to continue"
-read
-
+echo "Cloning dotfile repository"
 mkdir -p ~/git-projects/git.s-heppner.com
-cd ~/git-projects/git.s-heppner.com
-git clone ssh://git@gitea:2222/sebastian/dotfiles.git
+cd ~/git-projects/github.com/s-heppner
+git clone https://github.com/s-heppner/dotfiles.git
 cd dotfiles/deploy_scripts
 
 echo "Success. You can now deploy with the suiting script."
