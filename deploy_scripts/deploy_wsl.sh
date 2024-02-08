@@ -32,4 +32,3 @@ sudo ./symlink_dotfile ${DOTFILE_DIR}/etc/wsl.conf $/etc/wsl.conf
 
 # Convinience Scripts
 ./symlink_dotfile.sh ${DOTFILE_DIR}/sha256string.py ${HOME}/sha256string.py
-./symlink_dotfile.sh ${DOTFILE_DIR}/open_git_repo_page.sh ${HOME}/open_git_repo_page.sh

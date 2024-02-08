@@ -34,5 +34,3 @@ dconf load /org/gnome/terminal/legacy/profiles:/ < ${DOTFILE_DIR}/gnome-terminal
 
 # Convinience Scripts
 ./symlink_dotfile.sh ${DOTFILE_DIR}/sha256string.py ${HOME}/sha256string.py
-./symlink_dotfile.sh ${DOTFILE_DIR}/fix_barrier_keymap.sh ${HOME}/fix_barrier_keymap.sh
-./symlink_dotfile.sh ${DOTFILE_DIR}/open_git_repo_page.sh ${HOME}/open_git_repo_page.sh
