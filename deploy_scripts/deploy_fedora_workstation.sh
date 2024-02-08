@@ -24,6 +24,7 @@ dconf load /org/gnome/terminal/legacy/profiles:/ < ${DOTFILE_DIR}/gnome-terminal
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.gitconfig ${HOME}/.gitconfig
 # Bash
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.bashrc ${HOME}/.bashrc
+./symlink_dotfile.sh ${DOTFILE_DIR}/home/.bashrc_scripts ${HOME}/.bashrc_scripts
 # Rofi
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.config/rofi ${HOME}/.config/rofi
 
