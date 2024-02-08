@@ -164,6 +164,7 @@ fi
 
 # Add an alias to "open git repository page in browser"
 alias gito='bash ~/open_git_repo_page.sh'
+source .bashrc_scripts/upgrade.sh
 
 
 # enable programmable completion features (you don't need to enable
