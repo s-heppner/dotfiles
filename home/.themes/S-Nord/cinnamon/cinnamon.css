@@ -58,9 +58,12 @@ StScrollView StScrollBar {
   background-color: #2f2f2f;
   border: solid 1px #202020; }
 
+/* (2024-02-11, s-heppner)
+ * This modifies the popup menu (right clicking on an application in 
+ * the menu bar) */
 .menu {
   color: #ffffff;
-  background-color: #383838;
+  background-color: rgba(46,52,64, 0.8);
   border: solid 1px #202020;
   border-radius: 6px; }
   .menu.bottom {
@@ -184,11 +187,13 @@ StScrollView StScrollBar {
 /* ===================================================================
  * Panel (panel.js)
  * ===================================================================*/
+/* (2024-02-11, s-heppner)
+ * This modifies the panels (the bars on top, bottom, left or right)*/
 #panel {
   padding: 0px;
   height: 32px;
   width: 32px;
-  background-color: #2e3440;
+  background-color: rgba(46,52,64, 0.5);
   color: #cccccc;
   font-weight: normal; }
   #panel:highlight {
@@ -1079,8 +1084,10 @@ StScrollView StScrollBar {
 /* ===================================================================
  * Menu applet (menu@cinnamon.org/applet.js)
  * ===================================================================*/
+/* (2024-02-11, s-heppner)
+ * This modifies the dropdown menu (when pressing the "start" button */
 .menu-background {
-  background-color: #2f2f2f;
+  background-color: rgba(46,52,64, 0.8);
   border: 1px solid #202020; }
 
 /* Main menu title */
