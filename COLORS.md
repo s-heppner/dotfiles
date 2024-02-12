@@ -3,6 +3,7 @@
 RGB and HEX values of the nicest color scheme I can imagine
 
 - background-primary:            46,52,64;		#2e3440
+- background-primary-transparent rgba(46,52,64, 0.8)
 - background-secondary:          59,66,82;		#3b4252
 - background-secondary-alt:      67,76,94;		#434c5e
 - background-modifier-border:    67,76,94;		#434c5e
