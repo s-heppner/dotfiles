@@ -28,7 +28,7 @@ echo "Notice: You need to run locale-gen on your own"
 echo "Notice: You need to reboot for the changes to take effect"
 
 # WSL configuration
-sudo ./symlink_dotfile ${DOTFILE_DIR}/etc/wsl.conf $/etc/wsl.conf
+sudo ./symlink_dotfile.sh ${DOTFILE_DIR}/etc/wsl.conf /etc/wsl.conf
 
 # Convinience Scripts
 ./symlink_dotfile.sh ${DOTFILE_DIR}/sha256string.py ${HOME}/sha256string.py
