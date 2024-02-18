@@ -1,2 +1,8 @@
 [pull]
 	rebase = true
+
+[alias]
+    # (2024-02-19, s-heppner)
+    # Better blaming, ignoring whitespaces, 
+    # and detecting lines moved or copied in any commit at all
+    condemn = blame -w -C -C -C
