@@ -22,7 +22,7 @@ url_to_markdown() {
     if echo "$clipboard" | grep -Eq 'github\.com/[^/]+/[^/]+/(issues|pull)/[0-9]+'; then
         # Extract repository and issue number using sed
         repo=$(echo "$clipboard" | sed -E 's/.*github\.com\/([^\/]+\/[^\/]+)\/(issues|pull)\/[0-9]+.*/\1/')
-        issue_number=$(echo "$clipboard" | sed -E 's/.*github\.com\/[^\/]+\/[^\/]+\/(issues|pull)\/([0-9]+).*/\1/')
+        issue_number=$(echo "$clipboard" | sed -E 's/.*github\.com\/[^\/]+\/[^\/]+\/(issues|pull)\/([0-9]+).*/\2/')
 
         # Generate Markdown link
         markdown_link="[$repo#$issue_number]($clipboard)"
