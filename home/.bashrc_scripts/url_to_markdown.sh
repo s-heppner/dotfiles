@@ -1,5 +1,9 @@
 # This script will take an url inside the clipboard
 # and create a markdown link from it.
+#
+# Note: This requires `xclip`
+# Install on WSL via `sudo apt install xclip`
+# 
 # At the moment, the following links are supported:
 # 
 # GitHub Project
