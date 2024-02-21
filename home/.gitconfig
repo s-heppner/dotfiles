@@ -6,3 +6,9 @@
     # Better blaming, ignoring whitespaces, 
     # and detecting lines moved or copied in any commit at all
     condemn = blame -w -C -C -C
+
+# (2024-02-21, s-heppner)
+# Automatically resolve conflicts using recorded resolutions 
+# from previous encounters
+[rerere]
+    enabled = true
