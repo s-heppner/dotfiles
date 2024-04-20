@@ -23,7 +23,7 @@ The following configurations and scripts are stored here:
 	- `/etc/locale.conf`
 	- `/etc/vconsole.conf` (Virtual Console, outside the system)
 - **Vim**: `~/.vimrc`
-- **Bash**: `~/.bashrc`
+- **Bash**: `~/.bashrc`, `~/.bashrc_scripts`
 - **Terminal**:
 	- `./gnome-terminal-profiles.dconf`
 - **git**: `~/.gitconfig`
@@ -90,3 +90,22 @@ For this, I created `./backup_scripts`
 Furthermore, there is `~/.backup_scripts/backup_dconf.sh` for 
 updating the dconf dump files whenever I changed some settings that
 I want to persist. 
+
+# Dependencies
+The following are not hard dependencies (as in, everything will work
+without them), but are nice to have for an extra nice experience
+
+## Fedora
+- [thefuck](https://github.com/nvbn/thefuck) (autocorrect for commands)
+	- `dnf install thefuck`
+- [eza](https://github.com/eza-community/eza) (better ls)
+	- `dnf install eza`
+
+## WSL
+For the git `<tab>` autocompletion
+
+```bash
+sudo apt install git-core bash-completion
+```
+
+See #2 for details.
