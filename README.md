@@ -100,6 +100,8 @@ without them), but are nice to have for an extra nice experience
 	- `dnf install thefuck`
 - [eza](https://github.com/eza-community/eza) (better ls)
 	- `dnf install eza`
+- [bat](https://github.com/sharkdp/bat) (better cat)
+	- `dnf install bat`
 
 ## WSL
 For the git `<tab>` autocompletion
