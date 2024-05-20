@@ -5,12 +5,18 @@
 # is prefixed with such a comment
 
 # (2024-05-20, s-heppner)
-# Include all my scripts, but make sure the directory exists
+# Include all my scripts, if they exist and have proper permissions
+# Make sure the directory exists
 mkdir -p ~/.bashrc_scripts
-for script in ~/.bashrc_scripts/*.sh; do
-    source "$script"
-done
-
+# Check if there are any .sh files in the directory
+if ls ~/.bashrc_scripts/*.sh 1> /dev/null 2>&1; then
+    for script in ~/.bashrc_scripts/*.sh; do
+        # Check if the script is a regular file and is readable
+        if [ -f "$script" ] && [ -r "$script" ]; then
+            source "$script"
+        fi
+    done
+fi
 
 # If not running interactively, don't do anything
 case $- in
