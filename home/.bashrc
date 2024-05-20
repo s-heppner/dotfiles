@@ -4,8 +4,9 @@
 # Anything that is not part of the default .bashrc 
 # is prefixed with such a comment
 
-# (2024-02-08, s-heppner)
-# Include all my scripts
+# (2024-05-20, s-heppner)
+# Include all my scripts, but make sure the directory exists
+mkdir -p ~/.bashrc_scripts
 for script in ~/.bashrc_scripts/*.sh; do
     source "$script"
 done
