@@ -18,8 +18,6 @@ sudo sh -c 'echo "set bell-style none" >> /etc/inputrc'
 # Bash
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.bashrc ${HOME}/.bashrc
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.bashrc_scripts ${HOME}/.bashrc_scripts
-# Rofi
-./symlink_dotfile.sh ${DOTFILE_DIR}/home/.config/rofi ${HOME}/.config/rofi
 # Locale
 sudo ./symlink_dotfile.sh ${DOTFILE_DIR}/etc/locale.gen /etc/locale.gen
 sudo ./symlink_dotfile.sh ${DOTFILE_DIR}/etc/locale.conf /etc/locale.conf
