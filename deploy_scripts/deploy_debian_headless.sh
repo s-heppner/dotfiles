@@ -14,8 +14,6 @@ DOTFILE_DIR=$(dirname "$(pwd)")
 # Bash
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.bashrc ${HOME}/.bashrc
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.bashrc_scripts ${HOME}/.bashrc_scripts
-# Rofi
-./symlink_dotfile.sh ${DOTFILE_DIR}/home/.config/rofi ${HOME}/.config/rofi
 # Locale
 ./symlink_dotfile.sh ${DOTFILE_DIR}/etc/locale.gen /etc/locale.gen
 ./symlink_dotfile.sh ${DOTFILE_DIR}/etc/locale.conf /etc/locale.conf
