@@ -7,6 +7,19 @@
     # and detecting lines moved or copied in any commit at all
     condemn = blame -w -C -C -C
 
+    # (2024-06-19, s-heppner)
+    # Better Logging, displays the commit graph with abbreviated 
+    # commits, decorations, and detailed commit information including 
+    # commit hash, date, relative time, and committer details in a 
+    # clean format.
+    log3 = log --graph --abbrev-commit --decorate \
+               --format=format:'%C(bold blue)%h%C(reset) - \
+               %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset) \
+               %C(bold cyan)(committed: %cD)%C(reset) \
+               %C(auto)%d%C(reset)%n%C(white)%s%C(reset)%n%C(dim white)\
+               - %an <%ae> %C(reset) %C(dim white)\
+               (committer: %cn <%ce>)%C(reset)'
+
 # (2024-02-21, s-heppner)
 # Automatically resolve conflicts using recorded resolutions 
 # from previous encounters
