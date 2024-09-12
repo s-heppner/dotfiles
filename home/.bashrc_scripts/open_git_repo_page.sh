@@ -12,7 +12,11 @@ gito(){
 	    cmd.exe /C start "$url" 2>/dev/null
 	  else
 	    # Running in Linux, use xdg-open
-	    xdg-open "$url"
+	    # (2024-09-12, s-heppner)
+	    # Since `xdg-open` blocks the terminal for some reason, we run it 
+	    # as a background job and surpressing output.
+	    xdg-open "$url" >/dev/null 2>&1 &
+
 	  fi
 	}
 
