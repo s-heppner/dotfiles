@@ -28,10 +28,12 @@ gito(){
 	if [[ -d "$dir/.git" ]]; then
 		ssh_url=$(cd "$dir" && git remote -v | grep 'origin.*\(fetch\)' | grep -oE '([^[:space:]]*\.git)')
 		echo "Found SSH URL: $ssh_url"
-		if [[ "$ssh_url" == *gitea* ]]; then
+		if [[ "$ssh_url" == *git.s-heppner.com* ]]; then
 			# We have a gitea link
-			path="$ssh_url" | sed -E 's/\.git$//' | awk -F/ '{print "/" $(NF-1) "/" $NF}' | sed 's/:/\//'
-			repo_url="https://git.s-heppner.com${path}"
+			# Remove the scheme and port, then format it properly
+			path=$(echo "$ssh_url" | sed -E 's#ssh://[^@]+@([^:]+):[^/]+/#\1/#' | sed -E 's/\.git$//')
+			# Construct the final URL
+			repo_url="https://${path}"
 			echo "Open gitea page: $repo_url"
 			open_url "$repo_url"
 		elif [[ "$ssh_url" == *github.com* ]]; then
