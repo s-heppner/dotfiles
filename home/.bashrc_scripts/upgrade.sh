@@ -8,7 +8,8 @@ upgrade() {
     # Check if apt exists
     if command -v apt &> /dev/null; then
         echo "Using APT package manager"
-        sudo apt update && apt list upgradable && sudo apt upgrade
+        sudo apt update && apt list --upgradable
+        sudo apt upgrade
     # Check if dnf exists
     elif command -v dnf &> /dev/null; then
         echo "Using DNF package manager is currently not supported"
