@@ -1,10 +1,6 @@
 # My alias definitions
 
 # (2023-08-29, s-heppner)
-# Alias for rofi (Application Starter)
-alias r="rofi -show drun"
-
-# (2023-08-29, s-heppner)
 # thefuck alias
 if [ -f /usr/bin/thefuck ]; then
     eval "$(thefuck --alias)"
@@ -22,3 +18,8 @@ fi
 if [ -f /usr/bin/bat ]; then
     alias cat="bat"
 fi
+
+# (2024-10-24, s-heppner)
+# alias for easier navigation
+alias ..="cd .."
+alias ...="cd ../.."
