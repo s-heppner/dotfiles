@@ -1,9 +1,10 @@
-# This function calls all package managers commonly used (by me)
-# and updates them
-
-# Please note, that there are sudo calls inside this function
+# This file contains upgrade function shortcuts that I commonly use 
 
 upgrade() {
+    # This function calls all package managers commonly used (by me)
+    # and updates them
+
+    # Please note, that there are sudo calls inside this function
     echo "Update system files"
     # Check if apt exists
     if command -v apt &> /dev/null; then
@@ -37,3 +38,8 @@ upgrade() {
         echo "Flatpak package manager not found."
     fi
 }
+
+
+# Alias for upgrading a docker compose environment
+alias compose_build="docker compose build --no-cache --pull"
+alias compose_pull="docker compose pull"
