@@ -1,2 +1,6 @@
+# Ignore authorized key file
 authorized_keys
+
+# Ignore the logos file
+logos/
 
