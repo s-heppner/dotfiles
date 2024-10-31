@@ -14,5 +14,11 @@ generate_ssh_key(){
     -a 420 \
     -f ~/.ssh/keys/"${filename}" \
     -C "${dateStr} ${filename} $USER@$HOSTNAME"
+
+  # Print out the public key for comfort
+  echo ""
+  echo "The public key ~/.ssh/keys/"${filename}".pub is:"
+  cat ~/.ssh/keys/"${filename}".pub
+
 }
 
