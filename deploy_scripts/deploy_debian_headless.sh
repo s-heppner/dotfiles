@@ -7,8 +7,8 @@ chmod +x ./symlink_dotfile.sh
 
 DOTFILE_DIR=$(dirname "$(pwd)")
 
-# VIM
-./symlink_dotfile.sh ${DOTFILE_DIR}/home/.vimrc ${HOME}/.vimrc
+# NeoVIM
+./symlink_dotfile.sh ${DOTFILE_DIR}/home/.config/nvim ${HOME}/.config/nvim
 # git
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.gitconfig ${HOME}/.gitconfig
 # Bash

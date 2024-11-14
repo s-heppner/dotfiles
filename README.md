@@ -111,3 +111,18 @@ sudo apt install git-core bash-completion
 ```
 
 See #2 for details.
+
+## Dynamically needed Data
+### Logos
+tbd
+
+### Fonts 
+Namely we need a [NerdFont](https://github.com/ryanoasis/nerd-fonts), download the font you want from the release (e.g. JetBrains Mono)
+
+Copy it to `~/.fonts` (or a subdirectory), then refresh the font cache:
+```bash
+fc-cache -f -v
+```
+
+Todo: Check out https://github.com/lewis6991/gitsigns.nvim
+Check out https://github.com/nvim-telescope/telescope.nvim
