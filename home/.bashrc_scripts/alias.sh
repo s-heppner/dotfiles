@@ -26,6 +26,6 @@ alias ...="cd ../.."
 
 # (2024-11-14, s-heppner)
 # alias for neovim, if it is installed
-if [ -f /usr/bin/nvim ]; then
+if [ -f /usr/local/bin/nvim ]; then
     alias vim="nvim"
 fi
