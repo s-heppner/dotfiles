@@ -11,7 +11,6 @@ return {
         opts = { history = true, updateevents = "TextChanged,TextChangedI" },
         config = function(_, opts)
           require("luasnip").config.set_config(opts)
-          require "nvchad.configs.luasnip"
         end,
       },
     }

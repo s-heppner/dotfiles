@@ -9,6 +9,8 @@ return {
   },
   config = function()
     require("nvim-tree").setup {
+      hijack_unnamed_buffer_when_opening = true,
+      hijack_netrw = true, --Disable netrw and use NvimTree instead
       filters = {
         dotfiles = false,
       },
