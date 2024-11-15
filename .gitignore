@@ -4,3 +4,5 @@ authorized_keys
 # Ignore the logos file
 logos/
 
+# Ignore the Nvim lazy package manager lock file:
+lazy-lock.json
