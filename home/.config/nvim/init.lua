@@ -4,6 +4,11 @@ require("config.lazy")
 -- Set the font
 vim.o.guifont = "JetBrainsMono Nerd"
 
+-- Show absolute line number on the current line
+vim.opt.number = true
+-- Show relative line numbers for other lines    
+vim.opt.relativenumber = true
+
 -- Automatically open NvimTree on startup
 vim.api.nvim_create_autocmd("VimEnter", {
   callback = function()
@@ -11,4 +16,4 @@ vim.api.nvim_create_autocmd("VimEnter", {
   end,
 })
 -- Create an alias for :NvimTreeToggle
-vim.api.nvim_create_user_command("tree", ":NvimTreeToggle", {})
+vim.api.nvim_create_user_command("Tree", ":NvimTreeToggle", {})
