@@ -17,3 +17,7 @@ vim.api.nvim_create_autocmd("VimEnter", {
 })
 -- Create an alias for :NvimTreeToggle
 vim.api.nvim_create_user_command("Tree", ":NvimTreeToggle", {})
+
+-- Add vertical lines to the editor
+vim.opt.colorcolumn = "50,72"
+-- vim.cmd([[highlight ColorColumn ctermbg=lightgrey guibg=lightgrey]])
