@@ -117,3 +117,10 @@ PS2=$COLOR_TEXT
 if [ -f "/home/sebastian/.cargo/env" ]; then
     . "$HOME/.cargo/env"
 fi
+
+# Start the `ssh-agent` if it is not running
+# Note, that on WSL, the agent is limited to one terminal session.
+if [ -z "$SSH_AUTH_SOCK" ]; then
+  echo "Starting ssh-agent for this session:"
+  eval "$(ssh-agent -s)"
+fi
