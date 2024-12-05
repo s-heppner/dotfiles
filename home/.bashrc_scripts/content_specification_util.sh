@@ -41,7 +41,7 @@ print_first_line_of_spec_file() {
     # Check if the spec file was found
     if [ $? -eq 0 ]; then
         # Print the first line of the file
-        echo "$spec_file:"
+        echo -e "${COLOR_GOLD}$spec_file:${COLOR_RESET}"
         head -n 1 "$spec_file"
     else
     	echo "$spec_file"
@@ -58,7 +58,7 @@ print_whole_spec_file() {
     # Check if the spec file was found
     if [ $? -eq 0 ]; then
         # Print the whole content of the file
-        echo "$spec_file:"
+        echo -e "${COLOR_GOLD}$spec_file:${COLOR_RESET}"
         cat "$spec_file"
     else
     	echo "$spec_file"
