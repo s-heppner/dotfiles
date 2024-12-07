@@ -121,6 +121,8 @@ fi
 # Start the `ssh-agent` if it is not running
 # Note, that on WSL, the agent is limited to one terminal session.
 if [ -z "$SSH_AUTH_SOCK" ]; then
-  echo "Starting ssh-agent for this session:"
+  echo -e "${COLOR_CYAN}Starting ssh-agent for this session:${COLOR_RESET}"
   eval "$(ssh-agent -s)"
 fi
+
+echo -e "Hello ${COLOR_GOLD}${USER}${COLOR_RESET}!"
