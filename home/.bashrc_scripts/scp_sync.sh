@@ -30,7 +30,7 @@ scp_sync_push() {
     fi
 
     # Perform the scp operation
-    echo "Pushing file ${COLOR_GOLD}$path${COLOR_RESET}"
+    echo -e "Pushing file ${COLOR_GOLD}$path${COLOR_RESET}"
     scp -r "$SCP_SYNC_DIR/$filename" "$SCP_SYNC_SSH_HOST:$path"
 }
 
