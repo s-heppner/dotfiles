@@ -94,9 +94,10 @@ fi
 
 # Add `~/bin` to my `PATH` variable to make programs in there executable
 export PATH="$HOME/bin:$PATH"
-# (2023-11-14, s-heppner)
 # Add `~/.local/bin` to the `PATH` variable
 export PATH="$HOME/.local/bin:$PATH"
+# Also add the rust scripts folder to path
+export PATH="$HOME/.rust_scripts:$PATH"
 
 # Git branch parsing magic
 parse_git_branch () { git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'; }

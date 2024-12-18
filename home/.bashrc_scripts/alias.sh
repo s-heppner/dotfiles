@@ -29,3 +29,9 @@ alias ...="cd ../.."
 if [ -f /usr/local/bin/nvim ]; then
     alias vim="nvim"
 fi
+
+# (2024-12-18, s-heppner)
+# alias for rust-git-link-to-markdown
+if [ -f ~/.rust_scripts/rust-git-link-to-markdown ]; then
+    alias md="rust-git-link-to-markdown"
+fi

@@ -50,4 +50,4 @@ url_to_markdown() {
 
 }
 
-alias md="url_to_markdown"
+# alias md="url_to_markdown"

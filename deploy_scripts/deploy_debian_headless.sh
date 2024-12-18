@@ -14,9 +14,6 @@ DOTFILE_DIR=$(dirname "$(pwd)")
 # Bash
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.bashrc ${HOME}/.bashrc
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.bashrc_scripts ${HOME}/.bashrc_scripts
-# Locale
-# sudo ./symlink_dotfile.sh ${DOTFILE_DIR}/etc/locale.gen /etc/locale.gen
-# sudo ./symlink_dotfile.sh ${DOTFILE_DIR}/etc/locale.conf /etc/locale.conf
-# sudo ./symlink_dotfile.sh ${DOTFILE_DIR}/etc/vconsole.conf /etc/vconsole.conf
-# echo "Notice: You need to run locale-gen on your own"
-# echo "Notice: You need to reboot for the changes to take effect"
+# Make rust scripts executable
+# Note that the `~/.rust_scripts` is in the `$PATH`!
+./symlink_dotfile.sh ${DOTFILE_DIR}/rust_scripts ${HOME}/.rust_scripts
