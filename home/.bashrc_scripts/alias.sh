@@ -35,3 +35,10 @@ fi
 if [ -f ~/.rust_scripts/rust-git-link-to-markdown ]; then
     alias md="rust-git-link-to-markdown"
 fi
+
+# (2024-12-29, s-heppner)
+# alias for python-filetags
+FILETAG_PATH="$HOME/workspace/git.s-heppner.com/python-filetags"
+if [ -f "${FILETAG_PATH}/venv/bin/python3" ]; then
+    alias tag="${FILETAG_PATH}/venv/bin/python3 ${FILETAG_PATH}/filetags/main.py"
+fi
