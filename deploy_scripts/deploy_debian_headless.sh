@@ -9,6 +9,8 @@ DOTFILE_DIR=$(dirname "$(pwd)")
 
 # NeoVIM
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.config/nvim ${HOME}/.config/nvim
+# tmux
+./symlink_dotfile.sh ${DOTFILE_DIR}/home/.tmux.conf ${HOME}/.tmux.conf
 # git
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.gitconfig ${HOME}/.gitconfig
 # Bash
