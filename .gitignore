@@ -6,3 +6,6 @@ logos/
 
 # Ignore the Nvim lazy package manager lock file:
 lazy-lock.json
+
+# Ignore tmux swap file
+..tmux.conf.swp
