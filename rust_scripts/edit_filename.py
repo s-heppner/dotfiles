@@ -15,11 +15,15 @@ import re
 from typing import List
 from enum import Enum
 import argparse
+import tempfile
+import subprocess
 
 class Operation(Enum):
     PREFIX = "prefix"
     SUFFIX = "suffix"
     REPLACE = "replace"
+    EDIT = "edit"
+
 
 def list_files(patterns: List[str]) -> List[str]:
     """
@@ -35,15 +39,29 @@ def list_files(patterns: List[str]) -> List[str]:
         matched_files.extend([os.path.abspath(file) for file in glob.glob(full_pattern)])
     return matched_files
 
+
 def check_for_conflicts(new_filenames: List[str]) -> bool:
     """
-    Checks if any of the new filenames would conflict with existing files in the directory.
+    Checks if any of the new filenames conflict with existing files in the current directory.
 
     :param new_filenames: List of new absolute filenames to check.
     :return: True if there are conflicts, False otherwise.
     """
-    existing_files = set(os.path.abspath(os.path.join(os.getcwd(), f)) for f in os.listdir())
-    return any(new_name in existing_files for new_name in new_filenames)
+    # Get absolute paths of all files in the current directory
+    existing_files = {os.path.abspath(f) for f in os.listdir()}
+
+    # Check if any of the new filenames would collide with any other new filename
+    if len(new_filenames) != len(set(new_filenames)):
+        print(f"Naming Conflict: At least 2 files would be renamed to the same name.")
+        return False
+
+    # Check if any of the new filenames already exist
+    for new_name in new_filenames:
+        if new_name in existing_files:
+            print(f"Naming Conflict: '{new_name}'")
+            return True  # Conflict found
+    return False  # No conflicts
+
 
 def prefix_filenames(prefix: str, filenames: List[str]) -> List[str]:
     """
@@ -69,6 +87,7 @@ def prefix_filenames(prefix: str, filenames: List[str]) -> List[str]:
 
     return prefixed_files
 
+
 def suffix_filenames(suffix: str, filenames: List[str]) -> List[str]:
     """
     Suffixes a given string to the filenames, adding it before the file extension and ignoring content after " -- ".
@@ -91,6 +110,71 @@ def suffix_filenames(suffix: str, filenames: List[str]) -> List[str]:
         suffixed_files.append(new_name + (" -- " + ignore if sep else ""))
 
     return suffixed_files
+
+
+def edit_interactively(filenames: List[str]) -> List[str]:
+    """
+    Open a temporary file in `nano` to allow interactive editing of filenames.
+
+    This function creates a temporary file where each filename (without its path) is written on a new line.
+    It appends a help text as comments at the end of the file. The file is opened in `nano`
+    for editing, and the user can modify the filenames interactively. After editing, the
+    function reads the file, ignores lines starting with `#` (comments), and returns the
+    modified list of filenames with their original absolute paths restored. If no changes are
+    made, the original list of filenames is returned.
+
+    Parameters:
+        filenames (List[str]): A list of absolute path filenames to edit.
+
+    Returns:
+        List[str]: A list of modified filenames with their absolute paths.
+
+    Notes:
+        - The temporary file is deleted after the editing process.
+        - If the user makes no changes, the original filenames are returned.
+    """
+    help_text = """
+# Edit the filenames below. Each filename is on a new line.
+# Lines starting with '#' are ignored.
+# Save and close the file when done. If no changes are made, the original filenames will be kept.
+    """
+
+    # Extract only the base filenames (without paths)
+    base_filenames = [os.path.basename(filename) for filename in filenames]
+
+    with tempfile.NamedTemporaryFile(mode="w+", delete=False) as temp_file:
+        temp_filename = temp_file.name
+
+        # Write the base filenames and help text to the temporary file
+        temp_file.write("\n".join(base_filenames) + "\n")
+        temp_file.write(help_text)
+
+    try:
+        # Open the temporary file in nano
+        subprocess.run(["nano", temp_filename], check=True)
+
+        # Read the file after editing
+        with open(temp_filename, "r") as temp_file:
+            edited_lines = temp_file.readlines()
+
+        # Filter out comments and whitespace lines
+        edited_base_filenames = [line.strip() for line in edited_lines if line.strip() and not line.startswith("#")]
+
+        # Check if filenames were modified
+        if edited_base_filenames == base_filenames:
+            print("No changes were made to the filenames.")
+            return filenames
+
+        # Restore the absolute paths to the edited filenames
+        new_filenames = [os.path.join(os.path.dirname(original), edited)
+                         for original, edited in zip(filenames, edited_base_filenames)]
+
+        return new_filenames
+
+    finally:
+        # Clean up the temporary file
+        os.remove(temp_filename)
+
 
 def replace_filename(new_name: str, filenames: List[str]) -> List[str]:
     """
@@ -128,6 +212,7 @@ def main():
     group.add_argument("-p", "--prefix", action="store_true", help="Add a prefix to the filenames.")
     group.add_argument("-s", "--suffix", action="store_true", help="Add a suffix to the filenames.")
     group.add_argument("-r", "--replace", action="store_true", help="Replace the main part of the filenames.")
+    group.add_argument("-e", "--edit", action="store_true", help="Edit the filenames interactively.")
 
     parser.add_argument("modification", type=str, help="The string to use as the prefix, suffix, or replacement.")
     parser.add_argument(
@@ -145,6 +230,8 @@ def main():
         operation = Operation.SUFFIX
     elif args.replace:
         operation = Operation.REPLACE
+    elif args.edit:
+        operation = Operation.EDIT
     else:
         raise ValueError("Invalid operation specified.")
 
@@ -164,16 +251,18 @@ def main():
         new_filenames = suffix_filenames(args.modification, matching_files)
     elif operation == Operation.REPLACE:
         new_filenames = replace_filename(args.modification, matching_files)
+    elif operation == Operation.EDIT:
+        new_filenames = edit_interactively(matching_files)
 
     if check_for_conflicts(new_filenames):
-        print("Naming conflict detected. No files were renamed.")
+        print("No files were renamed.")
         return
 
     # Perform the renaming
     for old_name, new_name in zip(matching_files, new_filenames):
         os.rename(old_name, new_name)
 
-    print("Files renamed successfully.")
+    print(f"Renamed {len(new_filenames)} file(s).")
 
 if __name__ == "__main__":
     main()
