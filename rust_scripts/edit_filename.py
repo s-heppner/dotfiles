@@ -21,16 +21,19 @@ class Operation(Enum):
     SUFFIX = "suffix"
     REPLACE = "replace"
 
-def list_files(pattern: str) -> List[str]:
+def list_files(patterns: List[str]) -> List[str]:
     """
-    Lists all files in the current working directory that match the given pattern.
+    Lists all files in the current working directory that match any of the given patterns.
 
-    :param pattern: Filepath or wildcard pattern (e.g., '*.jpeg').
+    :param patterns: List of filepath or wildcard patterns (e.g., ['*.jpeg', 'file1.txt']).
     :return: List of matching absolute file paths.
     """
     cwd = os.getcwd()  # Get the current working directory
-    full_pattern = os.path.join(cwd, pattern)  # Combine cwd with the pattern
-    return [os.path.abspath(file) for file in glob.glob(full_pattern)]
+    matched_files = []
+    for pattern in patterns:
+        full_pattern = os.path.join(cwd, pattern)  # Combine cwd with the pattern
+        matched_files.extend([os.path.abspath(file) for file in glob.glob(full_pattern)])
+    return matched_files
 
 def check_for_conflicts(new_filenames: List[str]) -> bool:
     """
@@ -117,7 +120,9 @@ def replace_filename(new_name: str, filenames: List[str]) -> List[str]:
     return replaced_files
 
 def main():
-    parser = argparse.ArgumentParser(description="Edit filenames by adding a prefix, suffix, or replacing the main part of the name.")
+    parser = argparse.ArgumentParser(
+        description="Edit filenames by adding a prefix, suffix, or replacing the main part of the name."
+    )
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("-p", "--prefix", action="store_true", help="Add a prefix to the filenames.")
@@ -125,7 +130,12 @@ def main():
     group.add_argument("-r", "--replace", action="store_true", help="Replace the main part of the filenames.")
 
     parser.add_argument("modification", type=str, help="The string to use as the prefix, suffix, or replacement.")
-    parser.add_argument("file_pattern", type=str, help="The file pattern to match (e.g., '*.jpeg').")
+    parser.add_argument(
+        "file_patterns",
+        nargs="+",
+        help="The file patterns to match (e.g., '*.jpeg', 'file1.txt', 'file2.doc'). "
+             "This argument should always be in quotation marks!"
+    )
 
     args = parser.parse_args()
 
@@ -138,7 +148,12 @@ def main():
     else:
         raise ValueError("Invalid operation specified.")
 
-    matching_files = list_files(args.file_pattern)
+    # Expand file patterns into a list of files
+    if isinstance(args.file_patterns, str):
+        patterns: List[str] = [args.file_patterns]
+    else:
+        patterns = args.file_patterns
+    matching_files: List[str] = list_files(args.file_patterns)
     if not matching_files:
         print("No files matched the pattern.")
         return
