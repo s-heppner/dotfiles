@@ -96,8 +96,8 @@ fi
 export PATH="$HOME/bin:$PATH"
 # Add `~/.local/bin` to the `PATH` variable
 export PATH="$HOME/.local/bin:$PATH"
-# Also add the rust scripts folder to path
-export PATH="$HOME/.rust_scripts:$PATH"
+# Also add my custom scripts folder to path
+export PATH="$HOME/.mybin:$PATH"
 
 # Git branch parsing magic
 parse_git_branch () { git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'; }

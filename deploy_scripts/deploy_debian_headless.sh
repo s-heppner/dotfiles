@@ -16,6 +16,6 @@ DOTFILE_DIR=$(dirname "$(pwd)")
 # Bash
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.bashrc ${HOME}/.bashrc
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.bashrc_scripts ${HOME}/.bashrc_scripts
-# Make rust scripts executable
-# Note that the `~/.rust_scripts` is in the `$PATH`!
-./symlink_dotfile.sh ${DOTFILE_DIR}/rust_scripts ${HOME}/.rust_scripts
+# Make my own scripts executable
+# Note that the `~/.mybin` is in the `$PATH`!
+./symlink_dotfile.sh ${DOTFILE_DIR}/mybin ${HOME}/.mybin
