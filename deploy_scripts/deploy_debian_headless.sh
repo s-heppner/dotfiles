@@ -19,3 +19,5 @@ DOTFILE_DIR=$(dirname "$(pwd)")
 # Make my own scripts executable
 # Note that the `~/.mybin` is in the `$PATH`!
 ./symlink_dotfile.sh ${DOTFILE_DIR}/mybin ${HOME}/.mybin
+# Symlink for kanata config (keyboard remapping tool)
+./symlink_dotfile.sh ${DOTFILE_DIR}/home/.kanata.kbd ${HOME}/.kanata.kbd

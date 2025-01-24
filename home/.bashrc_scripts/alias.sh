@@ -42,3 +42,10 @@ FILETAG_PATH="$HOME/workspace/git.s-heppner.com/python-filetags"
 if [ -f "${FILETAG_PATH}/venv/bin/python3" ]; then
     alias tag="${FILETAG_PATH}/venv/bin/python3 ${FILETAG_PATH}/filetags/main.py"
 fi
+
+# (2025-01-24, s-heppner)
+# Alias for kanata (keyboard remapping tool)
+KANATA_PATH="$HOME/workspace/github.com/jtroo/kanata/target/release/kanata"
+if [ -f "${KANATA_PATH}" ]; then
+    alias kanata_as_sudo="sudo ${KANATA_PATH} --cfg ${HOME}/.kanata.kbd"
+fi

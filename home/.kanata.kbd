@@ -1,0 +1,40 @@
+;; Process all keys so that we can multi-tap
+(defcfg
+  process-unmapped-keys yes
+)
+
+;; Home Row hold behavior
+(defsrc
+  a
+  s
+  d
+  f
+  j
+  k
+  l
+  ‹⇧
+)
+
+(defalias
+  ;; See https://github.com/jtroo/kanata/blob/main/docs/config.adoc#tap-hold
+  a-mod (tap-hold 200 200 a lmet)
+  s-mod (tap-hold 200 200 s lalt)
+  d-mod (tap-hold 200 200 d lsft)
+  f-mod (tap-hold 200 200 f lctl)
+  j-mod (tap-hold 200 200 j lctl)
+  k-mod (tap-hold 200 200 k lsft)
+  l-mod (tap-hold 200 200 l lalt)
+  ;; I'm unbinding left shift to force me to learn
+  lsft-mod ( )
+)
+
+(deflayer base
+  @a-mod
+  @s-mod
+  @d-mod
+  @f-mod
+  @j-mod
+  @k-mod
+  @l-mod
+  @lsft-mod
+)
