@@ -17,6 +17,15 @@ from enum import Enum
 import argparse
 import tempfile
 import subprocess
+import difflib
+
+
+# ANSI color codes
+GREEN = "\033[32m"
+RED = "\033[31m"
+YELLOW = "\033[33m"
+RESET = "\033[0m"
+
 
 class Operation(Enum):
     PREFIX = "prefix"
@@ -53,12 +62,13 @@ def check_for_conflicts(new_filenames: List[str]) -> bool:
     # Check if any of the new filenames would collide with any other new filename
     if len(new_filenames) != len(set(new_filenames)):
         print(f"Naming Conflict: At least 2 files would be renamed to the same name.")
-        return False
+        return True
 
     # Check if any of the new filenames already exist
+    # Todo: Note that this creates a problem in the interactive mode, if we do not change the line.
     for new_name in new_filenames:
         if new_name in existing_files:
-            print(f"Naming Conflict: '{new_name}'")
+            print(f"Naming Conflict: '{new_name}' is already existing in the directory and would be overwritten.")
             return True  # Conflict found
     return False  # No conflicts
 
@@ -71,8 +81,12 @@ def prefix_filenames(prefix: str, filenames: List[str]) -> List[str]:
     :param filenames: List of absolute filenames to modify.
     :return: List of modified absolute filenames.
     """
-    iso_regex = re.compile(r"^(.*/)?(\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2})?) (.+)$")
     prefixed_files = []
+
+    # (2025-04-03, s-heppner)
+    # We expect either: `YYYY-mm-dd` or `YYYY-mm-ddTHHMMSS` as ISO-8601 format
+    # I know this is not exactly standard, but it's the best we can do with Windows file systems.
+    iso_regex = re.compile(r"^(.*/)?(\d{4}-\d{2}-\d{2}(?:T\d{6})?) (.+)$")
 
     for filename in filenames:
         dir_name, base_name = os.path.split(filename)
@@ -122,6 +136,8 @@ def edit_interactively(filenames: List[str]) -> List[str]:
     function reads the file, ignores lines starting with `#` (comments), and returns the
     modified list of filenames with their original absolute paths restored. If no changes are
     made, the original list of filenames is returned.
+
+    Todo: Lines with no changes after saving should be removed from the list of filenames
 
     Parameters:
         filenames (List[str]): A list of absolute path filenames to edit.
@@ -184,7 +200,7 @@ def replace_filename(new_name: str, filenames: List[str]) -> List[str]:
     :param filenames: List of absolute filenames to modify.
     :return: List of modified absolute filenames.
     """
-    iso_regex = re.compile(r"^(.*/)?(\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2})?) (.+?)(\.[^.]+)?$")
+    iso_regex = re.compile(r"^(.*/)?(\d{4}-\d{2}-\d{2}(?:T\d{6})?) (.+?)(\.[^.]+)?$")
     replaced_files = []
 
     for filename in filenames:
@@ -203,6 +219,41 @@ def replace_filename(new_name: str, filenames: List[str]) -> List[str]:
 
     return replaced_files
 
+
+def show_inline_diff(old_names, new_names):
+    """
+    Show a git-style inline diff between a list of old names and new names
+
+    :param old_names: String to replace the main part of the filename.
+    :param new_names: List of absolute filenames to modify.
+    """
+    for old_full, new_full in zip(old_names, new_names):
+        old = os.path.basename(old_full)
+        new = os.path.basename(new_full)
+        if old == new:
+            print(f"  {old}")  # unchanged, no color
+            continue
+
+        diff = difflib.SequenceMatcher(None, old, new)
+        line = ""
+        # This checks, if the strings are totally different words and then prints them as replaced rather than
+        # doing a character based diff. Else, we do a character based diff. The limit ratio itself is chosen at random.
+        print(diff.ratio())
+        if diff.ratio() < 0.55:
+            line += f"{RED}{old}{RESET}{GREEN}{new}{RESET}"
+        else:
+            for opcode, a0, a1, b0, b1 in diff.get_opcodes():
+                if opcode == "equal":
+                    line += old[a0:a1]
+                elif opcode == "delete":
+                    line += f"{RED}{old[a0:a1]}{RESET}"
+                elif opcode == "insert":
+                    line += f"{GREEN}{new[b0:b1]}{RESET}"
+                elif opcode == "replace":
+                    line += f"{RED}{old[a0:a1]}{RESET}{GREEN}{new[b0:b1]}{RESET}"
+        print(line)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Edit filenames by adding a prefix, suffix, or replacing the main part of the name."
@@ -220,6 +271,16 @@ def main():
         nargs="+",
         help="The file patterns to match (e.g., '*.jpeg', 'file1.txt', 'file2.doc'). "
              "This argument should always be in quotation marks!"
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Skip confirmation and rename without prompting."
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be renamed, but do not perform changes."
     )
 
     args = parser.parse_args()
@@ -240,7 +301,7 @@ def main():
         patterns: List[str] = [args.file_patterns]
     else:
         patterns = args.file_patterns
-    matching_files: List[str] = list_files(args.file_patterns)
+    matching_files: List[str] = list_files(patterns)
     if not matching_files:
         print("No files matched the pattern.")
         return
@@ -253,9 +314,30 @@ def main():
         new_filenames = replace_filename(args.modification, matching_files)
     elif operation == Operation.EDIT:
         new_filenames = edit_interactively(matching_files)
+    else:
+        raise KeyError(f"Invalid Operation '{operation}'.")
 
-    if check_for_conflicts(new_filenames):
-        print("No files were renamed.")
+    # Unless we defined the `--force` option, we display a diff and check for conflicts before performing the renaming.
+    if not args.force:
+        print("\nRename preview:")
+        show_inline_diff(matching_files, new_filenames)
+
+        if check_for_conflicts(new_filenames):
+            print("No files were renamed.")
+            return
+
+        while True:
+            answer = input("Do you want to continue [y/n]? ").strip().lower()
+            if answer in {"y", "yes"}:
+                break
+            elif answer in {"n", "no"}:
+                print("No files were renamed.")
+                return
+            else:
+                continue
+
+    if args.dry_run:
+        print("Dry run: No files were renamed.")
         return
 
     # Perform the renaming
