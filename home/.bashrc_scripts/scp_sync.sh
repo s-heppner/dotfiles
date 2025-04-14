@@ -4,8 +4,23 @@
 
 
 SCP_SYNC_CONFIG=~/.scp_sync.env
-alias sync="scp_sync"
-alias path="scp_sync_path"
+# (2025-04-14, s-heppner)
+# We remove these aliases since these functions are to be deprecated.
+# alias sync="scp_sync"
+# alias path="scp_sync_path"
+
+
+sync_dir_structure() {
+    if [[ $# -ne 2 ]]; then
+        echo "Usage: sync_dir_structure <source> <destination>"
+        return 1
+    fi
+
+    local src="$1"
+    local dest="$2"
+
+    rsync -av -f"+ */" -f"- *" --progress "$src" "$dest"
+}
 
 
 scp_sync_push() {
