@@ -39,7 +39,11 @@ upgrade() {
     fi
 }
 
-
-# Alias for upgrading a docker compose environment
-alias compose_build="docker compose build --no-cache --pull"
-alias compose_pull="docker compose pull"
+docker_compose_update() {
+    # This function rebuilds and updates the containers in a 
+	# Docker `compose.yaml`. 
+	# Note: User needs to be part of the `docker` group.
+	docker compose build --no-cache --pull
+	docker compose pull
+	docker compose up -d
+}
