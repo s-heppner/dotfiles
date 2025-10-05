@@ -49,3 +49,8 @@ KANATA_PATH="$HOME/workspace/github.com/jtroo/kanata/target/release/kanata"
 if [ -f "${KANATA_PATH}" ]; then
     alias kanata_as_sudo="sudo ${KANATA_PATH} --cfg ${HOME}/.kanata.kbd"
 fi
+
+# (2025-07-19, s-heppner)
+# Set numpad comma to dot in this session (resets automatically with reboot)
+# Only tested on Cinnamon (Wayland)
+alias numpad_comma_to_dot="setxkbmap -option kpdl:dot"
