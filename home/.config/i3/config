@@ -187,8 +187,8 @@ font pango:Noto Sans 10
 
 # (2025-10-06, s-heppner)
 # Set Variables
-set $term gnome-terminal
-set $wall /home/sebastian/workspace/flowers-16.jpg
+set $term xfce4-terminal
+set $wall /home/sebastian/.wallpapers/wallpaper.jpg
 
 # (2025-10-06, s-heppner)
 # Set Terminal and Wallpaper
