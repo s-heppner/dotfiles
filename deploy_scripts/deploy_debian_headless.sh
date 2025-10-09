@@ -12,6 +12,8 @@ DOTFILE_DIR=$(dirname "$(pwd)")
 # i3 and picom
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.config/i3 ${HOME}/.config/i3
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.config/picom ${HOME}/.config/picom
+# xfce4 Terminal
+./symlink_dotfile.sh ${DOTFILE_DIR}/home/.config/xfce4/terminal/terminalrc ${HOME}/.config/xfce4/terminal/terminalrc
 # tmux
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.tmux.conf ${HOME}/.tmux.conf
 # git
