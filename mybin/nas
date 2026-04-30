@@ -1,0 +1,170 @@
+#!/usr/bin/env bash
+#
+# This script is intended for setups where a NAS (or similar host) is reachable
+# directly on a local network (fast path) and via a remote SSH ProxyJump (slower path).
+# It prefers the direct connection when available and falls back automatically,
+# providing a simple toggle for mounting/unmounting via sshfs.
+#
+# This script expects a private config file at:
+#
+#   ~/.nas.env
+#
+# Create it with values like:
+#
+#   MOUNTPOINT="/mnt/..."  # The path on the local machine to mount to
+#   REMOTE_PATH="/mnt/lvDefault"  # The path on the remote machine to be mounted to MOUNTPOINT
+#   HOME_HOST="example.local"  # ~/.ssh/config to the remote machine from inside the home network
+#   REMOTE_HOST="example"  # ~/.ssh/config to the remote machine when outside the home network
+#
+# HOME_HOST and REMOTE_HOST should usually be SSH config aliases from ~/.ssh/config.
+# For example, HOME_HOST may point directly to the NAS on your LAN, while
+# REMOTE_HOST may use ProxyJump.
+#
+#
+# How to use:
+#
+#   nas mount      # Mount the remote path
+#   nas unmount    # Unmount it
+#   nas status     # Show mount status
+#   nas            # Toggle mount/unmount
+
+set -euo pipefail
+
+ENV_FILE="${HOME}/.nas.env"
+
+die() {
+  echo "Error: $*" >&2
+  exit 1
+}
+
+load_env() {
+  if [[ ! -f "$ENV_FILE" ]]; then
+    cat >&2 <<EOF
+Error: missing config file: $ENV_FILE
+
+Create it with these variables:
+
+  MOUNTPOINT=""
+  REMOTE_PATH=""
+  HOME_HOST=""
+  REMOTE_HOST=""
+
+Then rerun this script.
+EOF
+    exit 1
+  fi
+
+  # shellcheck source=/dev/null
+  source "$ENV_FILE"
+
+  : "${MOUNTPOINT:?missing MOUNTPOINT in $ENV_FILE}"
+  : "${REMOTE_PATH:?missing REMOTE_PATH in $ENV_FILE}"
+  : "${HOME_HOST:?missing HOME_HOST in $ENV_FILE}"
+  : "${REMOTE_HOST:?missing REMOTE_HOST in $ENV_FILE}"
+}
+
+need_cmd() {
+  command -v "$1" >/dev/null 2>&1 || die "missing command: $1"
+}
+
+is_mounted() {
+  findmnt -rn --mountpoint "$MOUNTPOINT" >/dev/null 2>&1
+}
+
+ensure_mountpoint() {
+  if [[ ! -d "$MOUNTPOINT" ]]; then
+    sudo mkdir -p "$MOUNTPOINT"
+    sudo chown "$USER:$USER" "$MOUNTPOINT"
+  fi
+}
+
+choose_host() {
+  # Try direct connection briefly
+  if timeout 5 ssh -q \
+    -o BatchMode=yes \
+    -o ConnectTimeout=3 \
+    -o ProxyJump=none \
+    "$HOME_HOST" true >/dev/null 2>&1; then
+    echo "$HOME_HOST"
+  else
+    echo "$REMOTE_HOST"
+  fi
+}
+
+mount_nas() {
+  need_cmd ssh
+  need_cmd sshfs
+  need_cmd findmnt
+
+  ensure_mountpoint
+
+  if is_mounted; then
+    echo "Already mounted at $MOUNTPOINT"
+    exit 0
+  fi
+
+  local host
+  host="$(choose_host)"
+
+  echo "Mounting ${host}:${REMOTE_PATH} -> ${MOUNTPOINT}"
+
+  sshfs "${host}:${REMOTE_PATH}" "$MOUNTPOINT" \
+    -o reconnect \
+    -o ServerAliveInterval=15 \
+    -o ServerAliveCountMax=3 \
+    -o idmap=user
+
+  echo "Mounted."
+}
+
+unmount_nas() {
+  need_cmd findmnt
+
+  if ! is_mounted; then
+    echo "Not mounted."
+    exit 0
+  fi
+
+  if command -v fusermount3 >/dev/null 2>&1; then
+    fusermount3 -u "$MOUNTPOINT"
+  elif command -v fusermount >/dev/null 2>&1; then
+    fusermount -u "$MOUNTPOINT"
+  else
+    die "neither fusermount3 nor fusermount found"
+  fi
+
+  echo "Unmounted."
+}
+
+status_nas() {
+  if is_mounted; then
+    findmnt "$MOUNTPOINT"
+  else
+    echo "Not mounted."
+  fi
+}
+
+load_env
+
+case "${1:-toggle}" in
+  mount|up)
+    mount_nas
+    ;;
+  unmount|umount|down)
+    unmount_nas
+    ;;
+  toggle)
+    if is_mounted; then
+      unmount_nas
+    else
+      mount_nas
+    fi
+    ;;
+  status)
+    status_nas
+    ;;
+  *)
+    echo "Usage: $(basename "$0") [mount|unmount|toggle|status]"
+    exit 2
+    ;;
+esac
