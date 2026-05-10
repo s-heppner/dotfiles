@@ -1,0 +1,173 @@
+#!/usr/bin/env bash
+#
+# Manage an SSH tunnel to a service like Home Assistant.
+#
+# Config file:
+#
+#   ~/.ha-tunnel.env
+#
+# Example:
+#
+#   LOCAL_HOST="127.0.0.1"
+#   LOCAL_PORT="8123"
+#   HA_HOST="192.168.1.2"
+#   HA_PORT="8123"
+#   SSH_HOST="home"
+#   PID_FILE="${HOME}/.ha-tunnel.pid"
+#
+# Usage:
+#
+#   ha-tunnel up
+#   ha-tunnel down
+#   ha-tunnel status
+#   ha-tunnel
+#
+# Then open:
+#
+#   http://localhost:8123
+
+set -euo pipefail
+
+ENV_FILE="${HOME}/.ha-tunnel.env"
+
+die() {
+  echo "Error: $*" >&2
+  exit 1
+}
+
+load_env() {
+  if [[ ! -f "$ENV_FILE" ]]; then
+    cat >&2 <<EOF
+Error: missing config file: $ENV_FILE
+
+Create it with these variables:
+
+  LOCAL_HOST="127.0.0.1"
+  LOCAL_PORT="8123"
+  HA_HOST="192.168.1.12"
+  HA_PORT="8123"
+  SSH_HOST="home"
+  PID_FILE="\${HOME}/.ha-tunnel.pid"
+
+Then rerun this script.
+EOF
+    exit 1
+  fi
+
+  # shellcheck source=/dev/null
+  source "$ENV_FILE"
+
+  : "${LOCAL_HOST:?missing LOCAL_HOST in $ENV_FILE}"
+  : "${LOCAL_PORT:?missing LOCAL_PORT in $ENV_FILE}"
+  : "${HA_HOST:?missing HA_HOST in $ENV_FILE}"
+  : "${HA_PORT:?missing HA_PORT in $ENV_FILE}"
+  : "${SSH_HOST:?missing SSH_HOST in $ENV_FILE}"
+  : "${PID_FILE:?missing PID_FILE in $ENV_FILE}"
+}
+
+need_cmd() {
+  command -v "$1" >/dev/null 2>&1 || die "missing command: $1"
+}
+
+is_running() {
+  [[ -f "$PID_FILE" ]] || return 1
+
+  local pid
+  pid="$(cat "$PID_FILE")"
+
+  [[ -n "$pid" ]] || return 1
+  kill -0 "$pid" >/dev/null 2>&1
+}
+
+tunnel_up() {
+  need_cmd ssh
+
+  if is_running; then
+    echo "Tunnel already running."
+    echo "PID: $(cat "$PID_FILE")"
+    echo "URL: http://${LOCAL_HOST}:${LOCAL_PORT}"
+    exit 0
+  fi
+
+  rm -f "$PID_FILE"
+
+  echo "Starting tunnel:"
+  echo "  local:  ${LOCAL_HOST}:${LOCAL_PORT}"
+  echo "  remote: ${HA_HOST}:${HA_PORT}"
+  echo "  ssh:    ${SSH_HOST}"
+
+  ssh -fN \
+    -L "${LOCAL_HOST}:${LOCAL_PORT}:${HA_HOST}:${HA_PORT}" \
+    -o ExitOnForwardFailure=yes \
+    -o ServerAliveInterval=15 \
+    -o ServerAliveCountMax=3 \
+    "$SSH_HOST"
+
+  # Find the tunnel process. Yes, this is ugly. So is process management in shell.
+  local pid
+  pid="$(pgrep -f "ssh .*${LOCAL_HOST}:${LOCAL_PORT}:${HA_HOST}:${HA_PORT}.*${SSH_HOST}" | head -n 1 || true)"
+
+  if [[ -z "$pid" ]]; then
+    die "tunnel seems to have started, but could not find SSH process"
+  fi
+
+  echo "$pid" > "$PID_FILE"
+
+  echo "Tunnel started."
+  echo "PID: $pid"
+  echo "URL: http://${LOCAL_HOST}:${LOCAL_PORT}"
+}
+
+tunnel_down() {
+  if ! is_running; then
+    echo "Tunnel not running."
+    rm -f "$PID_FILE"
+    exit 0
+  fi
+
+  local pid
+  pid="$(cat "$PID_FILE")"
+
+  echo "Stopping tunnel PID $pid"
+
+  kill "$pid"
+  rm -f "$PID_FILE"
+
+  echo "Tunnel stopped."
+}
+
+tunnel_status() {
+  if is_running; then
+    echo "Tunnel running."
+    echo "PID: $(cat "$PID_FILE")"
+    echo "URL: http://${LOCAL_HOST}:${LOCAL_PORT}"
+  else
+    echo "Tunnel not running."
+    rm -f "$PID_FILE"
+  fi
+}
+
+load_env
+
+case "${1:-toggle}" in
+  up|start)
+    tunnel_up
+    ;;
+  down|stop)
+    tunnel_down
+    ;;
+  toggle)
+    if is_running; then
+      tunnel_down
+    else
+      tunnel_up
+    fi
+    ;;
+  status)
+    tunnel_status
+    ;;
+  *)
+    echo "Usage: $(basename "$0") [up|down|toggle|status]"
+    exit 2
+    ;;
+esac
