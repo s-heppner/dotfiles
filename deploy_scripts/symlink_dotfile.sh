@@ -11,19 +11,19 @@ dateStr=$(date +%Y-%m-%d-%H%M)
 if [ -L "${dest}" ]; then
 # Existing symlink
 echo "    Remove existing symlink: ${dest}"
-rm ${dest}
+rm "${dest}"
 
 elif [ -f "${dest}" ]; then
-# Existing file 
+# Existing file
 echo "    Back-up existing file: ${dest}"
-mv ${dest}{,.${dateStr}}
+mv "${dest}" "${dest}.${dateStr}"
 
 elif [ -d "${dest}" ]; then
 # Existing directory
 echo "    Back-up existing directory: ${dest}"
-mv ${dest}{,.${dateStr}}
+mv "${dest}" "${dest}.${dateStr}"
 
 fi
 
 echo "    Create new symlink: ${dest}"
-ln -s ${src} ${dest}
+ln -s "${src}" "${dest}"
