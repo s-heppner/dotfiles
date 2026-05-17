@@ -54,3 +54,8 @@ fi
 # Set numpad comma to dot in this session (resets automatically with reboot)
 # Only tested on Cinnamon (Wayland)
 alias numpad_comma_to_dot="setxkbmap -option kpdl:dot"
+
+# alias for git-open
+if [ -f ~/.mybin/open-repo-in-browser ]; then
+    alias gito='open-repo-in-browser'
+fi
