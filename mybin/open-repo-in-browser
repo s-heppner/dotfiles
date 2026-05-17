@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+#
+# Open the repository page for the current (or given) git project.
+# Supports GitHub, Gitea (git.s-heppner.com), and RWTH GitLab instances.
+#
+# Usage:
+#
+#   open-repo-in-browser [remote [directory]]
+#
+#   remote     git remote to open (default: origin)
+#   directory  path to the git repository (default: current directory)
+
+set -euo pipefail
+
+open_url() {
+    if grep -qE "(Microsoft|WSL)" /proc/version &>/dev/null; then
+        cmd.exe /C start "$1" 2>/dev/null
+    else
+        # xdg-open blocks the terminal, so run it as a background job
+        xdg-open "$1" >/dev/null 2>&1 &
+    fi
+}
+
+remote="${1:-origin}"
+dir="${2:-$(pwd)}"
+
+if [[ ! -d "$dir/.git" ]]; then
+    echo "Error: no git repository found in: $dir" >&2
+    exit 1
+fi
+
+ssh_url=$(cd "$dir" && git remote -v | grep "${remote}.*\(fetch\)" | grep -oE '([^[:space:]]*\.git)')
+
+if [[ -z "$ssh_url" ]]; then
+    echo "Error: remote '${remote}' not found. Available remotes:" >&2
+    cd "$dir" && git remote
+    exit 1
+fi
+
+if [[ "$ssh_url" == *git.s-heppner.com* ]]; then
+    path=$(echo "$ssh_url" | sed -E 's#ssh://[^@]+@([^:]+):[^/]+/#\1/#' | sed -E 's/\.git$//')
+    repo_url="https://${path}"
+elif [[ "$ssh_url" == *github.com* ]]; then
+    path=$(echo "$ssh_url" | cut -d':' -f2 | sed 's/\.git$//')
+    repo_url="https://github.com/${path}"
+elif [[ "$ssh_url" == *git.rwth-aachen.de* ]]; then
+    path=$(echo "$ssh_url" | cut -d':' -f2 | sed 's/\.git$//')
+    repo_url="https://git.rwth-aachen.de/${path}"
+elif [[ "$ssh_url" == *git-ce.rwth-aachen.de* ]]; then
+    path=$(echo "$ssh_url" | cut -d':' -f2 | sed 's/\.git$//')
+    repo_url="https://git-ce.rwth-aachen.de/${path}"
+else
+    echo "Error: unknown remote host in: $ssh_url" >&2
+    exit 1
+fi
+
+echo "Opening ${remote}: $repo_url"
+open_url "$repo_url"

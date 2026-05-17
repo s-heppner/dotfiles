@@ -1,21 +1,23 @@
-# Define `x` as alias to open whatever file with its native application
-# On Linux, call xdg-open
-# On WSL, call explorer.exe
+# Define `x` to open a file or URL with its native application.
+# On WSL, use explorer.exe; on Linux, use xdg-open.
 
-# (2023-08-29, s-heppner)
-# Check if running in WSL
-# If so, we need to do some things differently
-if [[ $(uname -a) == *"Microsoft"* ]] || [[ $(uname -a) == *"WSL"* ]]; then
-    # GPG Terminal for WSL. 
-    # See https://git.s-heppner.com/sebastian/dotfiles/issues/9
+_is_wsl() {
+    grep -qE "(Microsoft|WSL)" /proc/version &>/dev/null
+}
+
+# Open a URL with the default browser, suppressing output
+open_url() {
+    if _is_wsl; then
+        cmd.exe /C start "$1" 2>/dev/null
+    else
+        xdg-open "$1" >/dev/null 2>&1 &
+    fi
+}
+
+if _is_wsl; then
+    # GPG terminal for WSL (see git.s-heppner.com/sebastian/dotfiles/issues/9)
     export GPG_TTY=$(tty)
-    # On Windows, xdg-open functionality is achieved 
-    # with the explorer.exe command
     alias x='explorer.exe'
 else
-    # alias xdg-open to be just "x", for opening stuff on the 
-    # command line with the default application
-    # Note that the `&>/dev/null` directs any output to be discarded, 
-    # preventing the command from blocking the terminal
-    alias x='xdg-open &>/dev/null'
+    x() { xdg-open "$@" >/dev/null 2>&1 & }
 fi
