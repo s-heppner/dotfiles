@@ -4,6 +4,12 @@
 # Anything that is not part of the default .bashrc 
 # is prefixed with such a comment
 
+# If not running interactively, don't do anything
+case $- in
+    *i*) ;;
+      *) return;;
+esac
+
 # (2024-05-20, s-heppner)
 # Include all my scripts, if they exist and have proper permissions
 # Make sure the directory exists
@@ -17,12 +23,6 @@ if ls ~/.bashrc_scripts/*.sh 1> /dev/null 2>&1; then
         fi
     done
 fi
-
-# If not running interactively, don't do anything
-case $- in
-    *i*) ;;
-      *) return;;
-esac
 
 # don't put duplicate lines or lines starting with space in the history.
 # See bash(1) for more options
