@@ -16,8 +16,8 @@ open_url() {
     if grep -qE "(Microsoft|WSL)" /proc/version &>/dev/null; then
         cmd.exe /C start "$1" 2>/dev/null
     else
-        # xdg-open blocks the terminal, so run it as a background job
-        xdg-open "$1" >/dev/null 2>&1 &
+        # run in a subshell so bash doesn't track it as a job
+        (xdg-open "$1" >/dev/null 2>&1 &)
     fi
 }
 

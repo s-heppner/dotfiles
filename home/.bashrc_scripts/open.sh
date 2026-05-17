@@ -19,5 +19,5 @@ if _is_wsl; then
     export GPG_TTY=$(tty)
     alias x='explorer.exe'
 else
-    x() { xdg-open "$@" >/dev/null 2>&1 & }
+    x() { (xdg-open "$@" >/dev/null 2>&1 &) }
 fi
