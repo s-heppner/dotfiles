@@ -38,7 +38,9 @@ if [[ -z "$ssh_url" ]]; then
 fi
 
 if [[ "$ssh_url" == *git.s-heppner.com* ]]; then
-    path=$(echo "$ssh_url" | sed -E 's#ssh://[^@]+@([^:]+):[^/]+/#\1/#' | sed -E 's/\.git$//')
+    path=$(echo "$ssh_url" | sed -E \
+        -e 's#ssh://[^@]+@([^:]+):[0-9]+/(.+)\.git#\1/\2#' \
+        -e 's#[^@]+@([^:]+):(.+)\.git#\1/\2#')
     repo_url="https://${path}"
 elif [[ "$ssh_url" == *github.com* ]]; then
     path=$(echo "$ssh_url" | cut -d':' -f2 | sed 's/\.git$//')
