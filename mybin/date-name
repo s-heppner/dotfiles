@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+#
+# Prefix or replace filenames with a date/datetime from the file's mtime.
+# Colons are omitted from the time component for Windows filename compatibility.
+#
+# Usage:
+#
+#   date-name date     <file>...   Prefix with YYYY-mm-dd
+#   date-name datetime <file>...   Prefix with YYYY-mm-ddTHHMMSS
+#   date-name replace  <file>...   Replace name with YYYY-mm-ddTHHMMSS (keeps extension)
+#
+# If a file already has a date prefix, 'datetime' upgrades it and vice versa.
+# Existing prefixes of matching precision are skipped.
+
+set -euo pipefail
+
+DATE_PAT='^[0-9]{4}-[0-9]{2}-[0-9]{2} '
+DATETIME_PAT='^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{6} '
+
+usage() {
+    echo "Usage: date-name <command> <file>..."
+    echo ""
+    echo "Commands:"
+    echo "  date      Prefix with YYYY-mm-dd from mtime"
+    echo "  datetime  Prefix with YYYY-mm-ddTHHMMSS from mtime"
+    echo "  replace   Replace filename with YYYY-mm-ddTHHMMSS (keeps extension)"
+}
+
+get_ext() {
+    local base
+    base=$(basename "$1")
+    if [[ "$base" == *.* ]]; then
+        echo ".${base##*.}"
+    else
+        echo ""
+    fi
+}
+
+cmd_date() {
+    local file dir base stripped new_date
+    for file in "$@"; do
+        if [ ! -f "$file" ]; then
+            echo "Skipping: $file is not a file" >&2
+            continue
+        fi
+        dir=$(dirname "$file")
+        base=$(basename "$file")
+        new_date=$(date -r "$file" +%Y-%m-%d)
+        if echo "$base" | grep -qE "$DATETIME_PAT"; then
+            stripped=$(echo "$base" | sed 's/^[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}T[0-9]\{6\} //')
+            mv "$file" "$dir/$new_date $stripped"
+        elif echo "$base" | grep -qE "$DATE_PAT"; then
+            echo "Skipping: $file already has a date prefix"
+        else
+            mv "$file" "$dir/$new_date $base"
+        fi
+    done
+}
+
+cmd_datetime() {
+    local file dir base stripped new_datetime
+    for file in "$@"; do
+        if [ ! -f "$file" ]; then
+            echo "Skipping: $file is not a file" >&2
+            continue
+        fi
+        dir=$(dirname "$file")
+        base=$(basename "$file")
+        new_datetime=$(date -r "$file" +%Y-%m-%dT%H%M%S)
+        if echo "$base" | grep -qE "$DATETIME_PAT"; then
+            echo "Skipping: $file already has a datetime prefix"
+        elif echo "$base" | grep -qE "$DATE_PAT"; then
+            stripped=$(echo "$base" | sed 's/^[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\} //')
+            mv "$file" "$dir/$new_datetime $stripped"
+        else
+            mv "$file" "$dir/$new_datetime $base"
+        fi
+    done
+}
+
+cmd_replace() {
+    local file dir ext new_datetime new_file
+    for file in "$@"; do
+        if [ ! -f "$file" ]; then
+            echo "Skipping: $file is not a file" >&2
+            continue
+        fi
+        dir=$(dirname "$file")
+        ext=$(get_ext "$file")
+        new_datetime=$(date -r "$file" +%Y-%m-%dT%H%M%S)
+        new_file="$dir/$new_datetime$ext"
+        if [ -e "$new_file" ]; then
+            echo "Error: $new_file already exists. Skipping $file." >&2
+            continue
+        fi
+        mv "$file" "$new_file"
+    done
+}
+
+if [ "$#" -eq 0 ]; then
+    usage
+    exit 1
+fi
+
+command="$1"
+shift
+
+case "$command" in
+    date)           cmd_date "$@" ;;
+    datetime)       cmd_datetime "$@" ;;
+    replace)        cmd_replace "$@" ;;
+    -h|--help|help) usage ;;
+    *) echo "Unknown command: $command" >&2; usage; exit 1 ;;
+esac
