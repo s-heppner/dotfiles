@@ -2,7 +2,7 @@
 
 create_diary_note() {
   local DAY=$(date +%F)
-  local file=~/workspace/wiki/wiki/Diary/${DAY}.md
+  local file=~/workspace/wiki/wiki/Journal/Daily/${DAY}.md
 
   cat > "$file" <<EOF
 ---
@@ -30,7 +30,7 @@ EOF
 
 add_diary_entry() {
   local text="$1"
-  local file=~/workspace/wiki/wiki/Diary/$(date +%F).md
+  local file=~/workspace/wiki/wiki/Journal/Daily/$(date +%F).md
   local timestamp=$(date +%H%M)
 
   if [[ ! -f "$file" ]]; then
