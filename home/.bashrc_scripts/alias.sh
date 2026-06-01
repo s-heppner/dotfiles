@@ -31,9 +31,9 @@ if [ -f /usr/local/bin/nvim ]; then
 fi
 
 # (2024-12-18, s-heppner)
-# alias for rust-git-link-to-markdown
-if [ -f ~/.mybin/rust-git-link-to-markdown ]; then
-    alias md="rust-git-link-to-markdown"
+# alias for git-link-to-markdown
+if [ -f ~/.mybin/git-link-to-markdown ]; then
+    alias md="git-link-to-markdown"
 fi
 
 # (2024-12-29, s-heppner)
