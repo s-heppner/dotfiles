@@ -79,12 +79,14 @@ ensure_mountpoint() {
 }
 
 choose_host() {
-  # Try direct connection briefly
-  if timeout 5 ssh -q \
-    -o BatchMode=yes \
-    -o ConnectTimeout=3 \
-    -o ProxyJump=none \
-    "$HOME_HOST" true >/dev/null 2>&1; then
+  # Check TCP reachability only — no SSH auth, so a passphrase-protected key
+  # doesn't falsely mark the home host as unavailable.
+  local hostname port
+  hostname=$(ssh -G "$HOME_HOST" 2>/dev/null | awk '/^hostname /{print $2; exit}')
+  port=$(ssh -G "$HOME_HOST" 2>/dev/null | awk '/^port /{print $2; exit}')
+  port="${port:-22}"
+
+  if [[ -n "$hostname" ]] && timeout 3 bash -c ">/dev/tcp/$hostname/$port" 2>/dev/null; then
     echo "$HOME_HOST"
   else
     echo "$REMOTE_HOST"
