@@ -1,0 +1,145 @@
+#!/usr/bin/env bash
+#
+# Manage content specification files (.content.md) in a directory tree.
+#
+# Each .content.md file describes the purpose of the directory it lives in.
+# The first line (≤ 52 chars) is the title; further content follows a blank line.
+#
+# Usage:
+#
+#   content-spec show          Show title of the nearest .content.md
+#   content-spec all           Show full content of the nearest .content.md
+#   content-spec tree [--all]  Show tree of .content.md files from CWD
+#                              --all also shows directories without a spec file
+#   content-spec edit          Open the .content.md in the current directory
+
+set -euo pipefail
+
+SPEC_FILE_NAME=".content.md"
+MAX_TITLE_LENGTH=52
+
+COLOR_GOLD='\e[38;2;235;203;139m'
+COLOR_RED='\e[38;2;191;97;106m'
+COLOR_RESET='\e[0m'
+
+usage() {
+    echo "Usage: content-spec <command>"
+    echo ""
+    echo "Commands:"
+    echo "  show          Show title of the nearest $SPEC_FILE_NAME"
+    echo "  all           Show full content of the nearest $SPEC_FILE_NAME"
+    echo "  tree [--all]  Show tree of spec files from current directory"
+    echo "  edit          Open $SPEC_FILE_NAME in current directory with nano"
+}
+
+find_closest_spec() {
+    local dir="$PWD"
+    while [[ "$dir" != "/" ]]; do
+        if [[ -f "$dir/$SPEC_FILE_NAME" ]]; then
+            echo "$dir/$SPEC_FILE_NAME"
+            return 0
+        fi
+        dir=$(dirname "$dir")
+    done
+    echo "No $SPEC_FILE_NAME found in the current or any parent directory." >&2
+    return 1
+}
+
+check_conformity() {
+    local file="$1"
+    local first_line
+    first_line=$(head -n 1 "$file")
+    if [[ ${#first_line} -ge $MAX_TITLE_LENGTH ]]; then
+        echo "Warning: The first line of $file is $MAX_TITLE_LENGTH characters or more." >&2
+    fi
+}
+
+cmd_show() {
+    local spec_file
+    spec_file=$(find_closest_spec) || exit 1
+    check_conformity "$spec_file"
+    echo -e "${COLOR_GOLD}${spec_file}:${COLOR_RESET}"
+    head -n 1 "$spec_file"
+}
+
+cmd_all() {
+    local spec_file
+    spec_file=$(find_closest_spec) || exit 1
+    check_conformity "$spec_file"
+    echo -e "${COLOR_GOLD}${spec_file}:${COLOR_RESET}"
+    cat "$spec_file"
+}
+
+explore_directories() {
+    local dir="$1"
+    local indent="$2"
+    local is_last="$3"
+    local show_all="$4"
+    local dir_name
+    dir_name=$(basename "$dir")
+    local spec_file="$dir/$SPEC_FILE_NAME"
+
+    if [[ -f "$spec_file" ]]; then
+        local first_line
+        first_line=$(head -n 1 "$spec_file")
+        if [[ "$is_last" == "true" ]]; then
+            echo -e "${indent}└── $dir_name: ${COLOR_GOLD}$first_line${COLOR_RESET}"
+        else
+            echo -e "${indent}├── $dir_name: ${COLOR_GOLD}$first_line${COLOR_RESET}"
+        fi
+    elif [[ "$show_all" == "true" ]]; then
+        if [[ "$is_last" == "true" ]]; then
+            echo -e "${indent}└── $dir_name: ${COLOR_RED}No $SPEC_FILE_NAME${COLOR_RESET}"
+        else
+            echo -e "${indent}├── $dir_name: ${COLOR_RED}No $SPEC_FILE_NAME${COLOR_RESET}"
+        fi
+    fi
+
+    local children=("$dir"/*/)
+    local total=${#children[@]}
+    local i
+    for ((i = 0; i < total; i++)); do
+        local child="${children[i]}"
+        if [[ -d "$child" ]]; then
+            if [[ $i -eq $((total - 1)) ]]; then
+                explore_directories "$child" "${indent}    " "true" "$show_all"
+            else
+                explore_directories "$child" "${indent}    " "false" "$show_all"
+            fi
+        fi
+    done
+}
+
+cmd_tree() {
+    local show_all="false"
+    [[ "${1:-}" == "--all" ]] && show_all="true"
+    explore_directories "$PWD" "" "false" "$show_all"
+}
+
+cmd_edit() {
+    local spec_file="./$SPEC_FILE_NAME"
+    if [[ ! -f "$spec_file" ]]; then
+        echo "New spec file: $spec_file"
+        touch "$spec_file"
+    else
+        echo "Existing spec file: $spec_file"
+    fi
+    nano "$spec_file"
+}
+
+if [[ "$#" -eq 0 ]]; then
+    usage
+    exit 1
+fi
+
+command="$1"
+shift
+
+case "$command" in
+    show)            cmd_show ;;
+    all)             cmd_all ;;
+    tree)            cmd_tree "${@}" ;;
+    edit)            cmd_edit ;;
+    -h|--help|help)  usage ;;
+    *) echo "Unknown command: $command" >&2; usage >&2; exit 1 ;;
+esac

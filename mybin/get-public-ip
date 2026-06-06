@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+#
+# Print the current public IPv4 address.
+#
+# Usage:
+#
+#   get-public-ip
+
+set -euo pipefail
+
+curl -4 ifconfig.co

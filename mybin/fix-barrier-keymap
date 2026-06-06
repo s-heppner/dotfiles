@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+#
+# Set the keyboard layout to German for Barrier's virtual keyboard device.
+#
+# Usage:
+#
+#   fix-barrier-keymap
+
+set -euo pipefail
+
+device_id=$(xinput list | \
+    grep "Virtual core XTEST keyboard" | \
+    sed -e 's/.\+=\([0-9]\+\).\+/\1/')
+setxkbmap -device "$device_id" de

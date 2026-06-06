@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+#
+# Generate an ed25519 SSH key in ~/.ssh/keys/.
+#
+# Usage:
+#
+#   generate-ssh-key <filename>
+
+set -euo pipefail
+
+usage() {
+    echo "Usage: generate-ssh-key <filename>"
+}
+
+if [[ "$#" -ne 1 || "$1" == "-h" || "$1" == "--help" ]]; then
+    usage
+    exit "${1:+1}"
+fi
+
+filename="$1"
+key_dir="${HOME}/.ssh/keys"
+key_path="${key_dir}/${filename}"
+date_str=$(date +%Y-%m-%d)
+
+mkdir -p "$key_dir"
+
+ssh-keygen \
+    -t ed25519 \
+    -a 420 \
+    -f "$key_path" \
+    -C "${date_str} ${filename} ${USER}@${HOSTNAME}"
+
+echo ""
+echo "Public key ${key_path}.pub:"
+cat "${key_path}.pub"
