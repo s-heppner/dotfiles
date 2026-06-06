@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+#
+# Manage daily diary entries in the Obsidian wiki.
+#
+# Usage:
+#
+#   diary new          Create today's diary note (no-op if it already exists)
+#   diary add <text>   Append a timestamped entry to today's note (creates it if needed)
+
+set -euo pipefail
+
+DIARY_DIR="${HOME}/workspace/wiki/wiki/Journal/Daily"
+
+usage() {
+    echo "Usage: diary <command> [args]"
+    echo ""
+    echo "Commands:"
+    echo "  new         Create today's diary note"
+    echo "  add <text>  Append a timestamped entry to today's note"
+}
+
+today_file() {
+    echo "${DIARY_DIR}/$(date +%F).md"
+}
+
+cmd_new() {
+    local day file
+    day=$(date +%F)
+    file="${DIARY_DIR}/${day}.md"
+
+    if [[ -f "$file" ]]; then
+        echo "Already exists: $file"
+        exit 0
+    fi
+
+    cat > "$file" <<EOF
+---
+day: ${day}
+location:
+---
+[[Diary]] entry for ${day}
+## Completed Today
+\`\`\`dataview
+TABLE WITHOUT ID
+  file.link AS Task,
+  type AS Type,
+  created AS Created,
+  deprecated AS dep
+FROM "TASKS"
+WHERE
+  completed = date(${day})
+SORT created ASC
+\`\`\`
+# Notes
+
+EOF
+    echo "Created: $file"
+}
+
+cmd_add() {
+    local text="$1"
+    local file
+    file=$(today_file)
+
+    if [[ ! -f "$file" ]]; then
+        echo "Diary file not found, creating it..." >&2
+        cmd_new
+    fi
+
+    [[ $(tail -c1 "$file" | wc -l) -eq 0 ]] && echo "" >> "$file"
+
+    echo "- $(date +%H%M) ${text}" >> "$file"
+}
+
+if [[ "$#" -eq 0 ]]; then
+    usage
+    exit 1
+fi
+
+command="$1"
+shift
+
+case "$command" in
+    new)             cmd_new ;;
+    add)             cmd_add "$*" ;;
+    -h|--help|help)  usage ;;
+    *) echo "Unknown command: $command" >&2; usage >&2; exit 1 ;;
+esac
