@@ -27,6 +27,8 @@ However, the following is what I think is of note:
 	- `./cinnamon.dconf`
 	- `backup_scripts/backup_dconf.sh` (Creates `cinnamon.dconf`)
 	- `etc/.wslconfig`
+- **Windows**:
+	- `winbin/` — personal Windows-side scripts, kept here for backup/versioning (not deployed by the deploy scripts)
 
 
 ## Deployment
