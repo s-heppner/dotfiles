@@ -9,8 +9,6 @@ DOTFILE_DIR=$(dirname "$(pwd)")
 
 # NeoVIM
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.config/nvim ${HOME}/.config/nvim
-# xfce4 Terminal
-./symlink_dotfile.sh ${DOTFILE_DIR}/home/.config/xfce4/terminal/terminalrc ${HOME}/.config/xfce4/terminal/terminalrc
 # tmux
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.tmux.conf ${HOME}/.tmux.conf
 # git
@@ -21,5 +19,3 @@ DOTFILE_DIR=$(dirname "$(pwd)")
 # Make my own scripts executable
 # Note that the `~/.mybin` is in the `$PATH`!
 ./symlink_dotfile.sh ${DOTFILE_DIR}/mybin ${HOME}/.mybin
-# Symlink for kanata config (keyboard remapping tool)
-./symlink_dotfile.sh ${DOTFILE_DIR}/home/.kanata.kbd ${HOME}/.kanata.kbd

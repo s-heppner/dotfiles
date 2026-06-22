@@ -23,10 +23,9 @@ However, the following is what I think is of note:
 - **Bash**: Pretty extensive bash configuration, including: 
 	- `home/.bashrc`, 
 	- `home/.bashrc_scripts`
-- **Desktop Environment**:
-	- `./cinnamon.dconf`
-	- `backup_scripts/backup_dconf.sh` (Creates `cinnamon.dconf`)
-	- `etc/.wslconfig`
+- **Editor**: NeoVim configuration under `home/.config/nvim/`
+- **Terminal multiplexer**: tmux config at `home/.tmux.conf`
+- **Personal scripts**: `mybin/` — various shell utilities
 - **Windows**:
 	- `winbin/` — personal Windows-side scripts, kept here for backup/versioning (not deployed by the deploy scripts)
 
