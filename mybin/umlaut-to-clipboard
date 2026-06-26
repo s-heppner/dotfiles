@@ -1,0 +1,63 @@
+#!/bin/bash
+#
+# umlaut-to-clipboard
+#
+# Writes a single German umlaut (or sharp s) to the clipboard, so it can be
+# pasted on keyboards that have no dedicated key for it.
+#
+# Usage:
+#   umlaut-to-clipboard <letter>
+#
+# Mapping:
+#   a -> ä    A -> Ä
+#   o -> ö    O -> Ö
+#   u -> ü    U -> Ü
+#   s -> ß
+#
+# Examples:
+#   umlaut-to-clipboard u   -> ü on the clipboard
+#   umlaut-to-clipboard s   -> ß on the clipboard
+
+
+# ---------------------------------------------------------------------------
+# Require exactly one argument
+# ---------------------------------------------------------------------------
+if [ "$#" -ne 1 ]; then
+    echo "Usage: umlaut-to-clipboard <letter>" >&2
+    echo "  a/o/u/s and their uppercase variants (a -> ä, s -> ß, ...)" >&2
+    exit 1
+fi
+
+
+# ---------------------------------------------------------------------------
+# Map the requested letter to its umlaut
+# ---------------------------------------------------------------------------
+letter="$1"
+umlaut=""
+
+case "$letter" in
+    a) umlaut="ä" ;;
+    o) umlaut="ö" ;;
+    u) umlaut="ü" ;;
+    A) umlaut="Ä" ;;
+    O) umlaut="Ö" ;;
+    U) umlaut="Ü" ;;
+    s) umlaut="ß" ;;
+    *)
+        echo "No umlaut for '$letter' (expected one of a o u A O U s)" >&2
+        exit 1
+        ;;
+esac
+
+
+# ---------------------------------------------------------------------------
+# Print the result and write it to the clipboard
+# ---------------------------------------------------------------------------
+
+echo -n "$umlaut" | xclip -selection clipboard
+if [ $? -eq 0 ]; then
+    echo "Umlaut '$umlaut' copied to clipboard."
+else
+    echo "Failed to copy umlaut to clipboard." >&2
+    exit 1
+fi

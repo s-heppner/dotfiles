@@ -36,6 +36,12 @@ if [ -f ~/.mybin/git-link-to-markdown ]; then
     alias md="git-link-to-markdown"
 fi
 
+# (2026-06-26, s-heppner)
+# alias for umlaut-to-clipboard
+if [ -f ~/.mybin/umlaut-to-clipboard ]; then
+    alias u="umlaut-to-clipboard"
+fi
+
 # (2024-12-29, s-heppner)
 # alias for python-filetags
 FILETAG_PATH="$HOME/workspace/git.s-heppner.com/python-filetags"
