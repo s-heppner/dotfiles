@@ -23,6 +23,9 @@ However, the following is what I think is of note:
 - **Bash**: Pretty extensive bash configuration, including: 
 	- `home/.bashrc`, 
 	- `home/.bashrc_scripts`
+- **Colors**: [base16](https://github.com/chriskempson/base16) terminal
+	palettes shared by bash and tmux, switchable at runtime with the
+	`bash-color-theme` command. See [COLORS.md](./COLORS.md).
 - **Editor**: NeoVim configuration under `home/.config/nvim/`
 - **Terminal multiplexer**: tmux config at `home/.tmux.conf`
 - **Personal scripts**: `mybin/` — various shell utilities

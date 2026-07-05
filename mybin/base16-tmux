@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+#
+# base16-tmux — expose the active base16 palette to tmux.
+#
+# Reads the active palette (the same data files and state file the bash loader
+# in ~/.bashrc_scripts/colors.sh uses) and publishes each slot as a tmux user
+# option: @base16_00 .. @base16_0F, each set to a "#rrggbb" value. The tmux
+# config references these, e.g. `#[fg=#{@base16_0A}]`.
+#
+# Intended to be run from tmux.conf via `run-shell`, and re-run by
+# `bash-color-theme` (which reloads tmux) when the palette changes.
+
+set -euo pipefail
+
+readonly DEFAULT_THEME="nord"
+THEMES_DIR="${BASE16_THEMES_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/base16/themes}"
+STATE_FILE="${BASE16_STATE_FILE:-${XDG_STATE_HOME:-$HOME/.local/state}/base16-theme}"
+
+readonly SLOTS=(00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F)
+
+die() {
+    printf 'base16-tmux: %s\n' "$1" >&2
+    exit 1
+}
+
+# Resolve the active palette name from the state file, or fall back.
+current_theme() {
+    local name
+    if [[ -r "$STATE_FILE" ]] && read -r name < "$STATE_FILE" && [[ -n "$name" ]]; then
+        printf '%s' "$name"
+    else
+        printf '%s' "$DEFAULT_THEME"
+    fi
+}
+
+main() {
+    command -v tmux >/dev/null 2>&1 || die "tmux not found"
+
+    local name file
+    name="$(current_theme)"
+    # Validate: lowercase letters, digits, hyphens only (blocks path traversal).
+    [[ "$name" =~ ^[a-z0-9-]+$ ]] || die "invalid theme name: $name"
+    file="$THEMES_DIR/$name.sh"
+    [[ -r "$file" ]] || die "theme not found: $file"
+
+    # Source the palette into locals; the file only sets BASE00..BASE0F.
+    local BASE00 BASE01 BASE02 BASE03 BASE04 BASE05 BASE06 BASE07 \
+          BASE08 BASE09 BASE0A BASE0B BASE0C BASE0D BASE0E BASE0F
+    # shellcheck source=/dev/null
+    source "$file"
+
+    local slot hexvar hex
+    for slot in "${SLOTS[@]}"; do
+        hexvar="BASE$slot"
+        hex="${!hexvar:-}"
+        [[ -n "$hex" ]] || die "theme $name is missing BASE$slot"
+        tmux set-option -g "@base16_$slot" "#$hex"
+    done
+
+    # Base status-bar style. The decorative segments in tmux.conf reference the
+    # @base16_* options above via formats; this only fills the gaps between
+    # them. Set with a concrete color here so it does not depend on style
+    # options expanding formats. fg=base05 (foreground), bg=base00 (background).
+    tmux set-option -g status-style "fg=#$BASE05,bg=#$BASE00"
+}
+
+main "$@"

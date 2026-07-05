@@ -102,17 +102,24 @@ export PATH="$HOME/.mybin:$PATH"
 # Git branch parsing magic
 parse_git_branch () { git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'; }
 
-# Custom PS1 Variable
-USER_HOST=$COLOR_GOLD'\u@\h '$COLOR_RESET
-TIME=$COLOR_CYAN'\t '$COLOR_RESET
-LOCATION=$COLOR_BLUE'`pwd | sed "s#\(/[^/]\{1,\}/[^/]\{1,\}/[^/]\{1,\}/\).*\(/[^/]\{1,\}/[^/]\{1,\}\)/\{0,1\}#\1_\2#g"` '$COLOR_RESET
-BRANCH=$COLOR_ORANGE'$(parse_git_branch)'$COLOR_RESET
-PROMPT='\n> '
+# Custom prompt.
+# Wrapped in a function so the active color theme can rebuild it live (see the
+# `bash-color-theme` command in .bashrc_scripts/colors.sh): PS1 embeds the
+# color escape codes by value, so it must be regenerated when they change.
+set_bash_prompt () {
+    local user_host time location branch prompt
+    user_host=$COLOR_YELLOW'\u@\h '$COLOR_RESET
+    time=$COLOR_CYAN'\t '$COLOR_RESET
+    location=$COLOR_BLUE'`pwd | sed "s#\(/[^/]\{1,\}/[^/]\{1,\}/[^/]\{1,\}/\).*\(/[^/]\{1,\}/[^/]\{1,\}\)/\{0,1\}#\1_\2#g"` '$COLOR_RESET
+    branch=$COLOR_ORANGE'$(parse_git_branch)'$COLOR_RESET
+    prompt='\n> '
 
-# The PS1 variable does the "prompt text", 
-# whereas PS2 does the input by the user
-PS1="\n"$TIME$USER_HOST$LOCATION$BRANCH$PROMPT
-PS2=$COLOR_TEXT
+    # The PS1 variable does the "prompt text",
+    # whereas PS2 does the input by the user
+    PS1="\n"$time$user_host$location$branch$prompt
+    PS2=$COLOR_TEXT
+}
+set_bash_prompt
 
 # Rust cargo library manager
 if [ -f "/home/sebastian/.cargo/env" ]; then
