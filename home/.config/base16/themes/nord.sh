@@ -1,4 +1,5 @@
 # base16-nord
+# Author: arcticicestudio (https://github.com/nordtheme/nord)
 #
 # base16 palette. Data only: this file is sourced by the theme loader in
 # `.bashrc_scripts/colors.sh` and by `base16-tmux`. It must not have side

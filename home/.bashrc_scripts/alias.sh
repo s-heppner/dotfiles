@@ -73,3 +73,6 @@ if [ -f ~/.mybin/content-spec ]; then
     alias ctree='content-spec tree'
     alias cm='content-spec edit'
 fi
+
+# alias for base16-color-scheme
+alias color-scheme='base16-color-scheme'

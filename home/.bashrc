@@ -104,7 +104,7 @@ parse_git_branch () { git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)
 
 # Custom prompt.
 # Wrapped in a function so the active color theme can rebuild it live (see the
-# `bash-color-theme` command in .bashrc_scripts/colors.sh): PS1 embeds the
+# `base16-color-scheme` command in .bashrc_scripts/colors.sh): PS1 embeds the
 # color escape codes by value, so it must be regenerated when they change.
 set_bash_prompt () {
     local user_host time location branch prompt

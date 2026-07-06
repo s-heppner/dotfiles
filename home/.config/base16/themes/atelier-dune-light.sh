@@ -1,4 +1,5 @@
-# base16 dune-light
+# base16 atelier-dune-light
+# Author: Bram de Haan (http://atelierbramdehaan.nl)
 # base16 palette. Data only: this file is sourced by the theme loader in
 # `.bashrc_scripts/colors.sh` and by `base16-tmux`. It must not have side
 # effects — only declare BASE00..BASE0F as 6-digit RGB hex (no leading '#').

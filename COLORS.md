@@ -20,10 +20,10 @@ choice* is stored per machine outside the repo so switching never dirties it.
 ## Switching the palette
 
 ```bash
-bash-color-theme            # or `list` — show installed palettes (* = active)
-bash-color-theme current    # print the active palette name
-bash-color-theme set nord   # switch (persists across shells)
-bash-color-theme nord       # shorthand for `set`
+base16-color-scheme            # or `list` — show installed palettes (* = active)
+base16-color-scheme current    # print the active palette name
+base16-color-scheme set nord   # switch (persists across shells)
+base16-color-scheme nord       # shorthand for `set`
 ```
 
 Switching re-colors the current shell (prompt, `ls`) immediately and, if run
@@ -71,7 +71,7 @@ BASE0C="00ffff"; BASE0D="0000ff"; BASE0E="ff00ff"; BASE0F="884400"
 
 The file name (without `.sh`) is the palette name — use lowercase letters,
 digits and hyphens only. It is picked up automatically; switch to it with
-`bash-color-theme set my-palette`. Any base16 scheme can be used by filling in
+`base16-color-scheme set my-palette`. Any base16 scheme can be used by filling in
 its `base00`–`base0F` hex values; ready-made schemes are collected in
 [tinted-theming/schemes](https://github.com/tinted-theming/schemes) (mind each
 scheme's license before redistributing its values).

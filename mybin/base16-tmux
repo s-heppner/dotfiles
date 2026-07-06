@@ -8,7 +8,7 @@
 # config references these, e.g. `#[fg=#{@base16_0A}]`.
 #
 # Intended to be run from tmux.conf via `run-shell`, and re-run by
-# `bash-color-theme` (which reloads tmux) when the palette changes.
+# `base16-color-scheme` (which reloads tmux) when the palette changes.
 
 set -euo pipefail
 

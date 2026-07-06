@@ -16,7 +16,7 @@ DOTFILE_DIR=$(dirname "$(pwd)")
 # Bash
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.bashrc ${HOME}/.bashrc
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.bashrc_scripts ${HOME}/.bashrc_scripts
-# base16 color palettes (shared by bash and tmux; switch with `bash-color-theme`)
+# base16 color palettes (shared by bash and tmux; switch with `base16-color-scheme`)
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.config/base16 ${HOME}/.config/base16
 # Make my own scripts executable
 # Note that the `~/.mybin` is in the `$PATH`!
