@@ -2,61 +2,75 @@
 #
 # Split files in a directory into numbered chunk subdirectories.
 #
-# Usage:
+# How to use:
 #
 #   chunk-move <directory> <chunk-size>
 
 set -euo pipefail
 
 usage() {
-    echo "Usage: chunk-move <directory> <chunk-size>"
+	echo "Usage: $(basename "$0") <directory> <chunk-size>"
 }
 
-if [[ "$#" -ne 2 ]]; then
-    usage >&2
-    exit 2
-fi
+die() {
+	echo "Error: $*" >&2
+	exit 1
+}
 
-dir="$1"
-chunk_size="$2"
+move_files_into_chunks() {
+	local dir="$1"
+	local chunk_size="$2"
 
-if [[ ! -d "$dir" ]]; then
-    echo "Error: '$dir' is not a directory." >&2
-    exit 2
-fi
-if ! [[ "$chunk_size" =~ ^[1-9][0-9]*$ ]]; then
-    echo "Error: chunk-size must be a positive integer." >&2
-    exit 2
-fi
+	local file_count
+	file_count=$(find "$dir" -mindepth 1 -maxdepth 1 -type f -print0 | tr -cd '\0' | wc -c)
+	if ((file_count == 0)); then
+		echo "No files to move in '${dir}'."
+		return
+	fi
 
-file_count=$(find "$dir" -mindepth 1 -maxdepth 1 -type f -print0 | tr -cd '\0' | wc -c)
-if (( file_count == 0 )); then
-    echo "No files to move in '$dir'."
-    exit 0
-fi
+	local chunks=$(((file_count + chunk_size - 1) / chunk_size))
+	local pad=${#chunks}
+	((pad < 2)) && pad=2
 
-chunks=$(( (file_count + chunk_size - 1) / chunk_size ))
-pad=${#chunks}
-(( pad < 2 )) && pad=2
+	local i=0
+	local current_chunk=0
+	local this_chunk subdir f
 
-i=0
-current_chunk=0
-pushd "$dir" >/dev/null
+	while IFS= read -r -d '' f; do
+		this_chunk=$((i / chunk_size + 1))
+		if ((this_chunk != current_chunk)); then
+			current_chunk=$this_chunk
+			printf "→ Moving files into chunk-%0*d\n" "$pad" "$current_chunk"
+		fi
 
-find . -maxdepth 1 -type f -print0 |
-while IFS= read -r -d '' f; do
-    this_chunk=$(( i / chunk_size + 1 ))
-    if (( this_chunk != current_chunk )); then
-        current_chunk=$this_chunk
-        printf "→ Moving files into chunk-%0*d\n" "$pad" "$current_chunk"
-    fi
+		subdir="${dir}/$(printf "chunk-%0*d" "$pad" "$current_chunk")"
+		mkdir -p "$subdir"
+		mv -n -- "$f" "$subdir"/
 
-    local_subdir=$(printf "chunk-%0*d" "$pad" "$current_chunk")
-    mkdir -p "$local_subdir"
-    mv -n -- "$f" "$local_subdir"/
+		i=$((i + 1))
+	done < <(find "$dir" -mindepth 1 -maxdepth 1 -type f -print0)
 
-    ((i++))
-done
+	echo "Done. Moved ${file_count} files into ${chunks} chunk directories."
+}
 
-popd >/dev/null
-echo "Done. Moved $file_count files into $chunks chunk directories."
+main() {
+	if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+		usage
+		exit 0
+	fi
+
+	if (($# != 2)); then
+		usage >&2
+		exit 2
+	fi
+
+	local dir="$1"
+	local chunk_size="$2"
+
+	[[ -d "$dir" ]] || die "'${dir}' is not a directory."
+	[[ "$chunk_size" =~ ^[1-9][0-9]*$ ]] || die "chunk-size must be a positive integer."
+
+	move_files_into_chunks "$dir" "$chunk_size"
+}
+
+main "$@"
