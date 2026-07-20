@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+#
+# post-commit hook — append each commit to the daily diary.
+#
+# Enabled globally via core.hooksPath (see ../home/.gitconfig), so it runs in
+# every repo on every machine. It only does work on machines that actually hold
+# the diary (`~/workspace/wiki`); elsewhere it exits quietly.
+#
+# Requires `diary`, `open-repo-in-browser`, and `git-link-to-markdown` on PATH.
+
+set -euo pipefail
+
+readonly DIARY_ROOT="${HOME}/workspace/wiki"
+
+# No diary on this machine — nothing to log. Not an error, so report and skip.
+if [[ ! -d "$DIARY_ROOT" ]]; then
+	echo "post-commit: no diary on this machine (${DIARY_ROOT} missing); skipping."
+	exit 0
+fi
+
+# On a diary machine the helper tools are expected; a missing one is a real
+# misconfiguration, so warn loudly rather than skipping silently.
+for tool in diary open-repo-in-browser git-link-to-markdown; do
+	if ! command -v "$tool" >/dev/null 2>&1; then
+		echo "post-commit: WARNING: '${tool}' not on PATH; skipping diary entry." >&2
+		exit 0
+	fi
+done
+
+toplevel=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+
+# Skip when committing the repo that stores the diary itself — otherwise this
+# hook would dirty the very working tree that was just committed.
+diary_repo=$(git -C "$DIARY_ROOT" rev-parse --show-toplevel 2>/dev/null) || diary_repo=
+[[ -n "$diary_repo" && "$toplevel" == "$diary_repo" ]] && exit 0
+
+# Resolve the repo's web URL and turn it into a Markdown link.
+# Skip quietly on an unknown/missing remote host.
+repo_url=$(open-repo-in-browser --print origin "$toplevel" 2>/dev/null) || exit 0
+repo_link=$(git-link-to-markdown "$repo_url" 2>/dev/null) || exit 0
+
+sha=$(git rev-parse --short HEAD)
+subject=$(git log -1 --pretty=%s)
+
+diary add "Committed ${repo_link} @ ${sha}: ${subject}" >/dev/null || true

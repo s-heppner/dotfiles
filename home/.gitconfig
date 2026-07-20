@@ -25,3 +25,10 @@
 # from previous encounters
 [rerere]
     enabled = true
+# (2026-07-20, s-heppner)
+# Run the shared git hooks tracked in this dotfiles repo in every repository.
+# See git-hooks/README.md. The post-commit hook logs each commit to the daily
+# diary; on machines without a diary (~/workspace/wiki missing) it exits
+# quietly, so enabling this everywhere is safe.
+[core]
+	hooksPath = ~/workspace/github.com/s-heppner/dotfiles/git-hooks
