@@ -1,60 +1,105 @@
 #!/usr/bin/env bash
 #
-# Open the repository page for the current (or given) git project.
+# Resolve the web URL of a git repository's remote and open it in a browser,
+# or print it to stdout with --print (useful for composing with other tools).
+#
 # Supports GitHub, Gitea (git.s-heppner.com), and RWTH GitLab instances.
 #
-# Usage:
+# How to use:
 #
-#   open-repo-in-browser [remote [directory]]
+#   open-repo-in-browser [-p|--print] [remote [directory]]
 #
-#   remote     git remote to open (default: origin)
-#   directory  path to the git repository (default: current directory)
+#   -p, --print   Print the URL to stdout instead of opening a browser
+#   remote        git remote to resolve (default: origin)
+#   directory     path to the git repository (default: current directory)
 
 set -euo pipefail
 
-open_url() {
-    if grep -qE "(Microsoft|WSL)" /proc/version &>/dev/null; then
-        cmd.exe /C start "$1" 2>/dev/null
-    else
-        # run in a subshell so bash doesn't track it as a job
-        (xdg-open "$1" >/dev/null 2>&1 &)
-    fi
+usage() {
+	echo "Usage: $(basename "$0") [-p|--print] [remote [directory]]"
 }
 
-remote="${1:-origin}"
-dir="${2:-$(pwd)}"
+die() {
+	echo "Error: $*" >&2
+	exit 1
+}
 
-if [[ ! -d "$dir/.git" ]]; then
-    echo "Error: no git repository found in: $dir" >&2
-    exit 1
-fi
+open_url() {
+	if grep -qE "(Microsoft|WSL)" /proc/version &>/dev/null; then
+		cmd.exe /C start "$1" 2>/dev/null
+	else
+		# run in a subshell so bash doesn't track it as a job
+		(xdg-open "$1" >/dev/null 2>&1 &)
+	fi
+}
 
-ssh_url=$(cd "$dir" && git remote -v | grep "${remote}.*\(fetch\)" | grep -oE '([^[:space:]]*\.git)')
+# repo_web_url <remote> <directory>
+#
+# Prints the https web URL of <remote> in the git repository at <directory>.
+repo_web_url() {
+	local remote="$1"
+	local dir="$2"
 
-if [[ -z "$ssh_url" ]]; then
-    echo "Error: remote '${remote}' not found. Available remotes:" >&2
-    cd "$dir" && git remote
-    exit 1
-fi
+	[[ -d "$dir/.git" ]] || die "no git repository found in: $dir"
 
-if [[ "$ssh_url" == *git.s-heppner.com* ]]; then
-    path=$(echo "$ssh_url" | sed -E \
-        -e 's#ssh://[^@]+@([^:]+):[0-9]+/(.+)\.git#\1/\2#' \
-        -e 's#[^@]+@([^:]+):(.+)\.git#\1/\2#')
-    repo_url="https://${path}"
-elif [[ "$ssh_url" == *github.com* ]]; then
-    path=$(echo "$ssh_url" | cut -d':' -f2 | sed 's/\.git$//')
-    repo_url="https://github.com/${path}"
-elif [[ "$ssh_url" == *git.rwth-aachen.de* ]]; then
-    path=$(echo "$ssh_url" | cut -d':' -f2 | sed 's/\.git$//')
-    repo_url="https://git.rwth-aachen.de/${path}"
-elif [[ "$ssh_url" == *git-ce.rwth-aachen.de* ]]; then
-    path=$(echo "$ssh_url" | cut -d':' -f2 | sed 's/\.git$//')
-    repo_url="https://git-ce.rwth-aachen.de/${path}"
-else
-    echo "Error: unknown remote host in: $ssh_url" >&2
-    exit 1
-fi
+	local ssh_url
+	ssh_url=$(cd "$dir" && git remote get-url "$remote" 2>/dev/null) ||
+		die "remote '${remote}' not found in: $dir"
 
-echo "Opening ${remote}: $repo_url"
-open_url "$repo_url"
+	local path
+	if [[ "$ssh_url" == *git.s-heppner.com* ]]; then
+		path=$(echo "$ssh_url" | sed -E \
+			-e 's#ssh://[^@]+@([^:]+):[0-9]+/(.+)\.git#\1/\2#' \
+			-e 's#[^@]+@([^:]+):(.+)\.git#\1/\2#')
+		echo "https://${path}"
+	elif [[ "$ssh_url" == *github.com* ]]; then
+		path=$(echo "$ssh_url" | cut -d':' -f2 | sed 's/\.git$//')
+		echo "https://github.com/${path}"
+	elif [[ "$ssh_url" == *git.rwth-aachen.de* ]]; then
+		path=$(echo "$ssh_url" | cut -d':' -f2 | sed 's/\.git$//')
+		echo "https://git.rwth-aachen.de/${path}"
+	elif [[ "$ssh_url" == *git-ce.rwth-aachen.de* ]]; then
+		path=$(echo "$ssh_url" | cut -d':' -f2 | sed 's/\.git$//')
+		echo "https://git-ce.rwth-aachen.de/${path}"
+	else
+		die "unknown remote host in: $ssh_url"
+	fi
+}
+
+main() {
+	local print=false
+	while (($#)); do
+		case "$1" in
+		-p | --print)
+			print=true
+			shift
+			;;
+		-h | --help)
+			usage
+			exit 0
+			;;
+		-*)
+			usage >&2
+			exit 2
+			;;
+		*)
+			break
+			;;
+		esac
+	done
+
+	local remote="${1:-origin}"
+	local dir="${2:-$(pwd)}"
+
+	local url
+	url=$(repo_web_url "$remote" "$dir")
+
+	if [[ "$print" == true ]]; then
+		echo "$url"
+	else
+		echo "Opening ${remote}: $url"
+		open_url "$url"
+	fi
+}
+
+main "$@"
