@@ -1,15 +1,22 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
-# git-link-to-markdown
+# Convert a git hosting URL into a Markdown link.
 #
-# Reads a git hosting URL from the clipboard and converts it to a Markdown link,
-# then writes the result back to the clipboard.
+# The URL is taken from, in order of precedence: the first argument, standard
+# input, or the X clipboard. The Markdown link is printed to stdout; when the
+# URL came from the clipboard, the result is also copied back to it.
 #
 # Supported hosts:
 #   - github.com
-#   - git.s-heppner.com  (Gitea)
-#   - git.rwth-aachen.de (GitLab)
-#   - git-ce.rwth-aachen.de (GitLab CE)
+#   - git.s-heppner.com      (Gitea)
+#   - git.rwth-aachen.de     (GitLab)
+#   - git-ce.rwth-aachen.de  (GitLab CE)
+#
+# How to use:
+#
+#   git-link-to-markdown                 Convert the URL on the clipboard
+#   git-link-to-markdown <url>           Convert the given URL
+#   echo <url> | git-link-to-markdown    Convert a URL from stdin
 #
 # Examples:
 #   https://github.com/user/repo                  -> [user/repo](url)
@@ -19,146 +26,137 @@
 #   https://github.com/user/repo/blob/main/foo.rs -> [user/repo/blob/main/foo.rs](url)
 #   https://github.com/user/repo/commit/abc1234f  -> [user/repo/abc1234](url)
 
+set -euo pipefail
 
-# ---------------------------------------------------------------------------
+usage() {
+	echo "Usage: $(basename "$0") [url]"
+}
+
+die() {
+	echo "Error: $*" >&2
+	exit 1
+}
+
+need_cmd() {
+	command -v "$1" >/dev/null 2>&1 || die "missing command: $1"
+}
+
 # parse_link <url> <base>
 #
 # Strips <base> from <url>, splits the remaining path into components, and
-# produces a Markdown link in one of these forms:
+# prints a Markdown link in one of these forms:
 #
 #   [user/repo](url)                 — repo root
 #   [user/repo#number](url)          — issue or pull request
 #   [user/repo/branch](url)          — tree (branch view)
 #   [user/repo/abc1234](url)         — commit (full SHA shortened to 7 chars)
 #   [user/repo/some/path](url)       — any other path (blob, releases, etc.)
-# ---------------------------------------------------------------------------
 parse_link() {
-    local url="$1"
-    local base="$2"
+	local url="$1"
+	local base="$2"
 
-    # Remove the base URL prefix, then strip any leading slash
-    local path="${url#$base}"
-    path="${path#/}"
+	# Remove the base URL prefix, then strip any leading slash.
+	local path="${url#"$base"}"
+	path="${path#/}"
 
-    # Split the path into an array on '/'
-    # e.g. "user/repo/issues/42" -> parts=(user repo issues 42)
-    IFS='/' read -ra parts <<< "$path"
+	# Split the path into an array on '/'.
+	# e.g. "user/repo/issues/42" -> parts=(user repo issues 42)
+	local parts
+	IFS='/' read -ra parts <<<"$path"
 
-    local user="${parts[0]}"
-    local repo="${parts[1]}"
+	local user="${parts[0]}"
+	local repo="${parts[1]}"
 
-    if [ -z "$user" ] || [ -z "$repo" ]; then
-        echo "Invalid URL structure: $url" >&2
-        return 1
-    fi
+	if [[ -z "$user" || -z "$repo" ]]; then
+		die "invalid URL structure: $url"
+	fi
 
-    # No path beyond user/repo — link directly to the repo root
-    if [ "${#parts[@]}" -le 2 ]; then
-        echo "[${user}/${repo}](${url})"
-        return 0
-    fi
+	# No path beyond user/repo — link directly to the repo root.
+	if [[ "${#parts[@]}" -le 2 ]]; then
+		echo "[${user}/${repo}](${url})"
+		return 0
+	fi
 
-    # The third component tells us what kind of page this is
-    local page_type="${parts[2]}"
+	# The third component tells us what kind of page this is.
+	local page_type="${parts[2]}"
 
-    case "$page_type" in
-
-        issues|pull|pulls)
-            # Issue or pull request: .../issues/42 or .../pull/7 or .../pulls/3
-            local number="${parts[3]}"
-            if [ -n "$number" ]; then
-                echo "[${user}/${repo}#${number}](${url})"
-            else
-                echo "${user}/${repo} - type '${page_type}' found but no number in URL" >&2
-                return 1
-            fi
-            ;;
-
-        tree)
-            # Branch view: .../tree/main
-            local branch="${parts[3]}"
-            if [ -n "$branch" ]; then
-                echo "[${user}/${repo}/${branch}](${url})"
-            else
-                echo "'tree' segment found but no branch name in URL: ${url}" >&2
-                return 1
-            fi
-            ;;
-
-        commit)
-            # Commit view: .../commit/abc1234ef56...
-            # Shorten the full SHA to 7 characters (Git's default abbrev length)
-            local full_hash="${parts[3]}"
-            if [ -n "$full_hash" ]; then
-                local short_hash="${full_hash:0:7}"
-                echo "[${user}/${repo}/${short_hash}](${url})"
-            else
-                echo "'commit' segment found but no hash in URL: ${url}" >&2
-                return 1
-            fi
-            ;;
-
-        *)
-            # Everything else (blob, commit, releases, …): keep the full path
-            local remaining_path
-            remaining_path=$(IFS='/'; echo "${parts[*]:2}")
-            echo "[${user}/${repo}/${remaining_path}](${url})"
-            ;;
-
-    esac
+	case "$page_type" in
+	issues | pull | pulls)
+		# Issue or pull request: .../issues/42 or .../pull/7 or .../pulls/3
+		local number="${parts[3]}"
+		[[ -n "$number" ]] || die "'${page_type}' found but no number in URL: $url"
+		echo "[${user}/${repo}#${number}](${url})"
+		;;
+	tree)
+		# Branch view: .../tree/main
+		local branch="${parts[3]}"
+		[[ -n "$branch" ]] || die "'tree' found but no branch name in URL: $url"
+		echo "[${user}/${repo}/${branch}](${url})"
+		;;
+	commit)
+		# Commit view: .../commit/abc1234ef56...
+		# Shorten the full SHA to 7 characters (Git's default abbrev length).
+		local full_hash="${parts[3]}"
+		[[ -n "$full_hash" ]] || die "'commit' found but no hash in URL: $url"
+		echo "[${user}/${repo}/${full_hash:0:7}](${url})"
+		;;
+	*)
+		# Everything else (blob, releases, …): keep the full path.
+		local remaining_path
+		remaining_path=$(
+			IFS='/'
+			echo "${parts[*]:2}"
+		)
+		echo "[${user}/${repo}/${remaining_path}](${url})"
+		;;
+	esac
 }
 
+# url_to_markdown <url>
+#
+# Routes <url> to parse_link based on its host prefix.
+url_to_markdown() {
+	local url="$1"
+	case "$url" in
+	https://github.com*) parse_link "$url" "https://github.com" ;;
+	https://git.s-heppner.com*) parse_link "$url" "https://git.s-heppner.com" ;;
+	https://git.rwth-aachen.de*) parse_link "$url" "https://git.rwth-aachen.de" ;;
+	https://git-ce.rwth-aachen.de*) parse_link "$url" "https://git-ce.rwth-aachen.de" ;;
+	*) die "no recognised git URL: $url" ;;
+	esac
+}
 
-# ---------------------------------------------------------------------------
-# Read the clipboard
-# ---------------------------------------------------------------------------
-raw_clipboard=$(xclip -selection clipboard -o 2>&1)
-if [ $? -ne 0 ]; then
-    echo "Failed to read clipboard: $raw_clipboard" >&2
-    exit 1
-fi
+main() {
+	case "${1:-}" in
+	-h | --help)
+		usage
+		exit 0
+		;;
+	esac
 
-# Trim leading/trailing whitespace (handles accidental trailing newlines)
-url=$(echo "$raw_clipboard" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+	local url from_clipboard=false
+	if (($# >= 1)); then
+		url="$1"
+	elif [[ ! -t 0 ]]; then
+		read -r url || true
+	else
+		need_cmd xclip
+		url=$(xclip -selection clipboard -o 2>/dev/null) || die "failed to read clipboard"
+		from_clipboard=true
+	fi
 
+	# Trim surrounding whitespace (e.g. a trailing newline from the clipboard).
+	url=$(printf '%s' "$url" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+	[[ -n "$url" ]] || die "no URL provided"
 
-# ---------------------------------------------------------------------------
-# Route to the right parser based on the URL prefix
-# ---------------------------------------------------------------------------
-markdown_result=""
+	local markdown
+	markdown=$(url_to_markdown "$url")
 
-if [[ "$url" == https://github.com* ]]; then
-    echo "Processing github.com URL: $url"
-    markdown_result=$(parse_link "$url" "https://github.com") || exit 1
+	echo "$markdown"
 
-elif [[ "$url" == https://git.s-heppner.com* ]]; then
-    echo "Processing git.s-heppner.com URL: $url"
-    markdown_result=$(parse_link "$url" "https://git.s-heppner.com") || exit 1
+	if [[ "$from_clipboard" == true ]]; then
+		printf '%s' "$markdown" | xclip -selection clipboard
+	fi
+}
 
-elif [[ "$url" == https://git.rwth-aachen.de* ]]; then
-    echo "Processing git.rwth-aachen.de URL: $url"
-    markdown_result=$(parse_link "$url" "https://git.rwth-aachen.de") || exit 1
-
-elif [[ "$url" == https://git-ce.rwth-aachen.de* ]]; then
-    echo "Processing git-ce.rwth-aachen.de URL: $url"
-    markdown_result=$(parse_link "$url" "https://git-ce.rwth-aachen.de") || exit 1
-
-else
-    echo "No recognised git URL in clipboard: $url" >&2
-    exit 1
-fi
-
-
-# ---------------------------------------------------------------------------
-# Print the result and write it back to the clipboard
-# ---------------------------------------------------------------------------
-if [ -n "$markdown_result" ]; then
-    echo "$markdown_result"
-
-    echo -n "$markdown_result" | xclip -selection clipboard
-    if [ $? -eq 0 ]; then
-        echo "Markdown result copied to clipboard."
-    else
-        echo "Failed to copy result to clipboard." >&2
-    fi
-fi
+main "$@"
