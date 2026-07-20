@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # umlaut-to-clipboard
 #
@@ -18,46 +18,55 @@
 #   umlaut-to-clipboard u   -> ü on the clipboard
 #   umlaut-to-clipboard s   -> ß on the clipboard
 
+set -euo pipefail
 
-# ---------------------------------------------------------------------------
-# Require exactly one argument
-# ---------------------------------------------------------------------------
-if [ "$#" -ne 1 ]; then
-    echo "Usage: umlaut-to-clipboard <letter>" >&2
-    echo "  a/o/u/s and their uppercase variants (a -> ä, s -> ß, ...)" >&2
-    exit 1
-fi
+usage() {
+  echo "Usage: $(basename "$0") <letter>"
+  echo "  a/o/u/s and their uppercase variants (a -> ä, s -> ß, ...)"
+}
 
+die() {
+  echo "Error: $*" >&2
+  exit 1
+}
 
-# ---------------------------------------------------------------------------
-# Map the requested letter to its umlaut
-# ---------------------------------------------------------------------------
-letter="$1"
-umlaut=""
+need_cmd() {
+  command -v "$1" >/dev/null 2>&1 || die "missing command: $1"
+}
 
-case "$letter" in
-    a) umlaut="ä" ;;
-    o) umlaut="ö" ;;
-    u) umlaut="ü" ;;
-    A) umlaut="Ä" ;;
-    O) umlaut="Ö" ;;
-    U) umlaut="Ü" ;;
-    s) umlaut="ß" ;;
-    *)
-        echo "No umlaut for '$letter' (expected one of a o u A O U s)" >&2
-        exit 1
-        ;;
-esac
+umlaut_for() {
+  local letter="$1"
 
+  case "$letter" in
+    a) echo "ä" ;;
+    o) echo "ö" ;;
+    u) echo "ü" ;;
+    A) echo "Ä" ;;
+    O) echo "Ö" ;;
+    U) echo "Ü" ;;
+    s) echo "ß" ;;
+    *) die "no umlaut for '$letter' (expected one of a o u A O U s)" ;;
+  esac
+}
 
-# ---------------------------------------------------------------------------
-# Print the result and write it to the clipboard
-# ---------------------------------------------------------------------------
+main() {
+  if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+    usage
+    exit 0
+  fi
 
-echo -n "$umlaut" | xclip -selection clipboard
-if [ $? -eq 0 ]; then
-    echo "Umlaut '$umlaut' copied to clipboard."
-else
-    echo "Failed to copy umlaut to clipboard." >&2
-    exit 1
-fi
+  if [[ "$#" -ne 1 ]]; then
+    usage >&2
+    exit 2
+  fi
+
+  need_cmd xclip
+
+  local umlaut
+  umlaut="$(umlaut_for "$1")"
+
+  echo -n "$umlaut" | xclip -selection clipboard || die "failed to copy umlaut to clipboard"
+  echo "Umlaut '${umlaut}' copied to clipboard."
+}
+
+main "$@"
