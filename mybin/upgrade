@@ -1,31 +1,64 @@
 #!/usr/bin/env bash
 #
-# Upgrade system packages: apt/dnf, snap, flatpak.
+# Upgrade system packages: apt, snap, flatpak.
 #
-# Usage:
+# How to use:
 #
 #   upgrade
 
 set -euo pipefail
 
-if command -v apt &>/dev/null; then
-    echo "==> apt"
-    sudo apt update && apt list --upgradable
-    sudo apt upgrade
-elif command -v dnf &>/dev/null; then
-    echo "==> dnf"
-    sudo dnf upgrade
-else
-    echo "Error: no supported package manager found (apt, dnf)." >&2
-    exit 1
-fi
+usage() {
+  echo "Usage: $(basename "$0")"
+}
 
-if command -v snap &>/dev/null; then
+die() {
+  echo "Error: $*" >&2
+  exit 1
+}
+
+upgrade_apt() {
+  echo "==> apt"
+  sudo apt update && apt list --upgradable
+  sudo apt upgrade
+}
+
+upgrade_snap() {
+  if command -v snap >/dev/null 2>&1; then
     echo "==> snap"
     sudo snap refresh
-fi
+  fi
+}
 
-if command -v flatpak &>/dev/null; then
+upgrade_flatpak() {
+  if command -v flatpak >/dev/null 2>&1; then
     echo "==> flatpak"
     sudo flatpak update -y
-fi
+  fi
+}
+
+main() {
+  case "${1:-}" in
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    "") ;;
+    *)
+      echo "Error: unknown option: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+
+  if command -v apt >/dev/null 2>&1; then
+    upgrade_apt
+  else
+    die "no supported package manager found (apt)"
+  fi
+
+  upgrade_snap
+  upgrade_flatpak
+}
+
+main "$@"
