@@ -30,7 +30,11 @@
 
 set -euo pipefail
 
-ENV_FILE="${HOME}/.nas.env"
+readonly ENV_FILE="${HOME}/.nas.env"
+
+usage() {
+  echo "Usage: $(basename "$0") [mount|unmount|toggle|status]"
+}
 
 die() {
   echo "Error: $*" >&2
@@ -146,27 +150,34 @@ status_nas() {
   fi
 }
 
-load_env
+main() {
+  load_env
 
-case "${1:-toggle}" in
-  mount|up)
-    mount_nas
-    ;;
-  unmount|umount|down)
-    unmount_nas
-    ;;
-  toggle)
-    if is_mounted; then
-      unmount_nas
-    else
+  case "${1:-toggle}" in
+    mount | up)
       mount_nas
-    fi
-    ;;
-  status)
-    status_nas
-    ;;
-  *)
-    echo "Usage: $(basename "$0") [mount|unmount|toggle|status]"
-    exit 2
-    ;;
-esac
+      ;;
+    unmount | umount | down)
+      unmount_nas
+      ;;
+    toggle)
+      if is_mounted; then
+        unmount_nas
+      else
+        mount_nas
+      fi
+      ;;
+    status)
+      status_nas
+      ;;
+    -h | --help)
+      usage
+      ;;
+    *)
+      usage >&2
+      exit 2
+      ;;
+  esac
+}
+
+main "$@"
