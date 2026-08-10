@@ -1,0 +1,211 @@
+#!/usr/bin/env bash
+#
+# emoji-to-clipboard
+#
+# Writes a single emoji to the clipboard, looked up by name. Emoji have no
+# dedicated keys and too many names to remember, so every entry can carry
+# aliases and the shell completes them (see ~/.bashrc_scripts/emoji.sh).
+#
+# Usage:
+#   emoji-to-clipboard <name>        copy the emoji to the clipboard
+#   emoji-to-clipboard -p <name>     print it to stdout instead
+#   emoji-to-clipboard list          show the whole table
+#   emoji-to-clipboard search <term> show entries matching <term>
+#   emoji-to-clipboard names         every name and alias, one per line
+#
+# <name> is matched against names and aliases: first exactly, then as a
+# substring. A substring that matches exactly one entry is used; one that
+# matches several prints the candidates and copies nothing.
+#
+# Examples:
+#   emoji-to-clipboard party    -> 🎉 on the clipboard
+#   emoji-to-clipboard tada     -> 🎉, via an alias
+#   emoji-to-clipboard thin     -> 🤔, unique substring
+#   emoji-to-clipboard -p joy   -> 😂 on stdout
+#
+# The table lives in $EMOJI_FILE (default ~/.config/emoji/emoji.tsv, deployed
+# from home/.config/emoji/ in the dotfiles repo). It is tab-separated, with an
+# optional third field of space-separated aliases:
+#
+#   😅	sweat-smile	phew relief nervous
+#   🎉	party	tada celebrate hooray
+#   👍	thumbsup	+1 approve yes
+#
+# Blank lines and lines starting with `#` are ignored. Names and aliases share
+# one namespace and must be unique; `list`, `search`, `names` and `help` are
+# reserved by this script.
+
+set -euo pipefail
+
+EMOJI_FILE="${EMOJI_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/emoji/emoji.tsv}"
+
+usage() {
+  echo "Usage: $(basename "$0") [-p] <name>"
+  echo "       $(basename "$0") list | search <term> | names"
+  echo "  <name> is an emoji name or alias; a unique substring also works."
+  echo "  -p, --print  write the emoji to stdout instead of the clipboard"
+}
+
+die() {
+  echo "Error: $*" >&2
+  exit 1
+}
+
+need_cmd() {
+  command -v "$1" >/dev/null 2>&1 || die "missing command: $1"
+}
+
+require_data() {
+  [[ -r "$EMOJI_FILE" ]] ||
+    die "no emoji table at '$EMOJI_FILE' (run deploy_scripts/deploy_debian_headless.sh, or set EMOJI_FILE)"
+}
+
+# Print the table rows whose name or aliases match <query>. mode=exact requires
+# equality, mode=substr accepts a substring. Rows are emitted verbatim, so
+# callers can keep using $'\t' to split them.
+match() {
+  local mode="$1" query="$2"
+  local glyph name aliases cand found
+  local -a candidates extra
+
+  while IFS=$'\t' read -r glyph name aliases; do
+    if [[ -z "$glyph" || "$glyph" == \#* ]]; then
+      continue
+    fi
+
+    candidates=("$name")
+    if [[ -n "$aliases" ]]; then
+      read -ra extra <<<"$aliases"
+      candidates+=("${extra[@]}")
+    fi
+
+    found=""
+    for cand in "${candidates[@]}"; do
+      if [[ "$mode" == "exact" ]]; then
+        if [[ "$cand" == "$query" ]]; then
+          found=1
+          break
+        fi
+      elif [[ "$cand" == *"$query"* ]]; then
+        found=1
+        break
+      fi
+    done
+
+    if [[ -n "$found" ]]; then
+      printf '%s\t%s\t%s\n' "$glyph" "$name" "$aliases"
+    fi
+  done <"$EMOJI_FILE"
+}
+
+# Render matched rows as an aligned table.
+render() {
+  local glyph name aliases
+  while IFS=$'\t' read -r glyph name aliases; do
+    printf '%s  %-16s %s\n' "$glyph" "$name" "$aliases"
+  done
+}
+
+cmd_copy() {
+  local query="$1" print_only="$2"
+  require_data
+
+  local rows
+  rows="$(match exact "$query")"
+  if [[ -z "$rows" ]]; then
+    rows="$(match substr "$query")"
+  fi
+
+  [[ -n "$rows" ]] || die "no emoji for '$query' (try: $(basename "$0") list)"
+
+  if [[ "$(wc -l <<<"$rows")" -gt 1 ]]; then
+    echo "'$query' is ambiguous:" >&2
+    render <<<"$rows" >&2
+    exit 1
+  fi
+
+  local glyph name
+  IFS=$'\t' read -r glyph name _ <<<"$rows"
+
+  if [[ -n "$print_only" ]]; then
+    printf '%s\n' "$glyph"
+    return
+  fi
+
+  need_cmd xclip
+  printf '%s' "$glyph" | xclip -selection clipboard || die "failed to copy emoji to clipboard"
+  echo "Copied ${glyph} (${name}) to clipboard."
+}
+
+cmd_list() {
+  require_data
+  match substr "" | render
+}
+
+cmd_search() {
+  local term="$1"
+  require_data
+
+  local rows
+  rows="$(match substr "$term")"
+  [[ -n "$rows" ]] || die "nothing matches '$term'"
+  render <<<"$rows"
+}
+
+# Every name and alias, one per line. This is what the tab-completion in
+# ~/.bashrc_scripts/emoji.sh feeds to compgen, so the candidate list has a
+# single source.
+cmd_names() {
+  require_data
+
+  local name aliases
+  local -a alias_list
+  while IFS=$'\t' read -r _ name aliases; do
+    printf '%s\n' "$name"
+    if [[ -n "$aliases" ]]; then
+      read -ra alias_list <<<"$aliases"
+      printf '%s\n' "${alias_list[@]}"
+    fi
+  done < <(match substr "")
+}
+
+main() {
+  case "${1:-}" in
+    list | ls)
+      cmd_list
+      ;;
+    search)
+      if [[ "$#" -ne 2 ]]; then
+        usage >&2
+        exit 2
+      fi
+      cmd_search "$2"
+      ;;
+    names)
+      cmd_names
+      ;;
+    help | -h | --help)
+      usage
+      ;;
+    -p | --print)
+      if [[ "$#" -ne 2 ]]; then
+        usage >&2
+        exit 2
+      fi
+      cmd_copy "$2" "print"
+      ;;
+    "")
+      usage >&2
+      exit 2
+      ;;
+    *)
+      if [[ "$#" -ne 1 ]]; then
+        usage >&2
+        exit 2
+      fi
+      cmd_copy "$1" ""
+      ;;
+  esac
+}
+
+main "$@"

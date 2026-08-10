@@ -1,0 +1,68 @@
+# Emoji table for `emoji-to-clipboard`.
+#
+# Tab-separated, three fields:
+#   <glyph>	<name>	<alias> <alias> ...
+# The alias field is optional. Blank lines and lines starting with `#` are
+# ignored.
+#
+# Rules:
+#   - Names and aliases share one namespace and must be unique across the file.
+#   - Avoid the reserved words `list`, `search`, `names` and `help`; the CLI
+#     dispatches on those before looking anything up.
+#   - No whitespace inside a name or alias, and keep them lowercase.
+#
+# glyph	name	aliases
+😅	sweat-smile	phew relief nervous
+😂	joy	lol cry-laugh tears laughter-tears
+🙈	see-no-evil	monkey oops hide
+❤️	heart	love red-heart
+😄	smiley	happy :D
+😊	friendly	smiling
+🤗	hug	hugging embrace
+😔	pensive	sad dejected down
+🙃	upside-down	irony flipped
+😁	grin	beam cheesy
+😘	kiss	blow-kiss love-you kiss-heart
+😉	wink	winking
+😭	sob	bawling sobbing cry
+🤔	thinking	hmm ponder
+👍	thumbsup	+1 approve yes
+😍	heart-eyes	love-it adore
+😋	yum	tasty delicious
+🥲	happy-tear	smile-tear bittersweet
+🤣	rofl	rolling lmao
+😝	tongue-out	squint-tongue silly
+😐	neutral	meh straight-face
+🎉	party	tada celebrate hooray
+😇	innocent	halo angel
+😮	surprised	wow open-mouth oh
+😏	smirk	sly smug
+😒	unamused	side-eye annoyed ugh
+🫠	melting	melt dissolve
+🤷‍♂️	shrug	dunno idk whatever
+😎	cool	sunglasses shades
+🤯	mind-blown	explode whoa
+😢	tear	sad-tear single-tear
+🤞	fingers-crossed	luck hopeful
+😜	wink-tongue	cheeky playful
+😈	devil	imp mischief evil evil-grin
+🙂	slight-smile	slightly-smiling polite
+🥳	partying	celebrating party-face birthday
+😱	scream	shocked horror fear
+😡	angry	rage mad pouting
+👎	thumbsdown	-1 nope disapprove
+✋	hand	raised-hand stop halt
+👋	wave	hello bye hi
+👀	eyes	looking watching see
+💁‍♂️	info-desk	tipping-hand sassy fyi
+🙉	hear-no-evil	monkey-ears
+🙊	speak-no-evil	monkey-mouth silence
+🔥	fire	lit hot burn
+🎇	sparkler	firework sparkle
+❌	cross	x no wrong fail
+✅	check	done tick correct ok
+🏳️‍🌈	pride	rainbow-flag lgbtq
+🏳️‍⚧️	trans	trans-flag transgender
+🎊	confetti	confetti-ball
+🤦‍♂️	facepalm	smh doh
+🙏	thanks	pray praying please

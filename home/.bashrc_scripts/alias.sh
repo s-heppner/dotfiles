@@ -42,6 +42,12 @@ if [ -f ~/.mybin/umlaut-to-clipboard ]; then
     alias u="umlaut-to-clipboard"
 fi
 
+# (2026-08-10, s-heppner)
+# alias for emoji-to-clipboard
+if [ -f ~/.mybin/emoji-to-clipboard ]; then
+    alias e="emoji-to-clipboard"
+fi
+
 # (2024-12-29, s-heppner)
 # alias for python-filetags
 FILETAG_PATH="$HOME/workspace/git.s-heppner.com/python-filetags"
