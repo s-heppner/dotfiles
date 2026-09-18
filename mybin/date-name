@@ -1,29 +1,81 @@
 #!/usr/bin/env bash
 #
-# Prefix or replace filenames with a date/datetime from the file's mtime.
+# date-name
+#
+# Prefix or replace filenames with a date/datetime taken from the file's mtime,
+# or, with --exif, from the capture time recorded in the file's metadata.
 # Colons are omitted from the time component for Windows filename compatibility.
 #
 # Usage:
 #
-#   date-name date     <file>...   Prefix with YYYY-mm-dd
-#   date-name datetime <file>...   Prefix with YYYY-mm-ddTHHMMSS
-#   date-name replace  <file>...   Replace name with YYYY-mm-ddTHHMMSS (keeps extension)
+#   date-name [--exif] date     <file>...   Prefix with YYYY-mm-dd
+#   date-name [--exif] datetime <file>...   Prefix with YYYY-mm-ddTHHMMSS
+#   date-name [--exif] replace  <file>...   Replace name with YYYY-mm-ddTHHMMSS (keeps extension)
 #
 # If a file already has a date prefix, 'datetime' upgrades it and vice versa.
 # Existing prefixes of matching precision are skipped.
+#
+# --exif reads DateTimeOriginal, falling back to CreateDate (videos), and needs
+# exiftool:
+#
+#   sudo apt install libimage-exiftool-perl
+#
+# Files carrying no such tag print a warning and fall back to mtime. The
+# metadata timestamp is naive local time and is used verbatim, without any
+# timezone conversion.
 
 set -euo pipefail
 
 readonly DATE_PAT='^[0-9]{4}-[0-9]{2}-[0-9]{2} '
 readonly DATETIME_PAT='^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{6} '
 
+readonly DATE_FMT='%Y-%m-%d'
+readonly DATETIME_FMT='%Y-%m-%dT%H%M%S'
+
+# Queried in order; the first tag that has a value wins.
+readonly EXIF_TAGS=(-DateTimeOriginal -CreateDate)
+
+USE_EXIF=0
+
 usage() {
-	echo "Usage: $(basename "$0") <command> <file>..."
+	echo "Usage: $(basename "$0") [--exif] <command> <file>..."
 	echo ""
 	echo "Commands:"
-	echo "  date      Prefix with YYYY-mm-dd from mtime"
-	echo "  datetime  Prefix with YYYY-mm-ddTHHMMSS from mtime"
+	echo "  date      Prefix with YYYY-mm-dd"
+	echo "  datetime  Prefix with YYYY-mm-ddTHHMMSS"
 	echo "  replace   Replace filename with YYYY-mm-ddTHHMMSS (keeps extension)"
+	echo ""
+	echo "Options:"
+	echo "  --exif    Take the timestamp from the metadata capture time"
+	echo "            instead of the mtime (requires exiftool)"
+}
+
+die() {
+	echo "Error: $*" >&2
+	exit 1
+}
+
+need_cmd() {
+	command -v "$1" >/dev/null 2>&1 || die "missing command: $1"
+}
+
+# file_timestamp <strftime format> <file>
+file_timestamp() {
+	local fmt="$1" file="$2"
+	local tag stamp
+	if [[ "$USE_EXIF" -eq 1 ]]; then
+		# One tag per call: with several tags at once, exiftool does not
+		# guarantee the output order, so the fallback order would be lost.
+		for tag in "${EXIF_TAGS[@]}"; do
+			stamp=$(exiftool -d "$fmt" -s3 "$tag" -- "$file" 2>/dev/null) || stamp=""
+			if [[ -n "$stamp" ]]; then
+				echo "$stamp"
+				return
+			fi
+		done
+		echo "Warning: $file has no capture time, using mtime" >&2
+	fi
+	date -r "$file" +"$fmt"
 }
 
 get_ext() {
@@ -45,7 +97,7 @@ cmd_date() {
 		fi
 		dir=$(dirname "$file")
 		base=$(basename "$file")
-		new_date=$(date -r "$file" +%Y-%m-%d)
+		new_date=$(file_timestamp "$DATE_FMT" "$file")
 		if [[ "$base" =~ $DATETIME_PAT ]]; then
 			stripped=$(sed -E "s/${DATETIME_PAT}//" <<<"$base")
 			mv "$file" "$dir/$new_date $stripped"
@@ -66,7 +118,7 @@ cmd_datetime() {
 		fi
 		dir=$(dirname "$file")
 		base=$(basename "$file")
-		new_datetime=$(date -r "$file" +%Y-%m-%dT%H%M%S)
+		new_datetime=$(file_timestamp "$DATETIME_FMT" "$file")
 		if [[ "$base" =~ $DATETIME_PAT ]]; then
 			echo "Skipping: $file already has a datetime prefix" >&2
 		elif [[ "$base" =~ $DATE_PAT ]]; then
@@ -87,7 +139,7 @@ cmd_replace() {
 		fi
 		dir=$(dirname "$file")
 		ext=$(get_ext "$file")
-		new_datetime=$(date -r "$file" +%Y-%m-%dT%H%M%S)
+		new_datetime=$(file_timestamp "$DATETIME_FMT" "$file")
 		new_file="$dir/$new_datetime$ext"
 		if [[ -e "$new_file" ]]; then
 			echo "Skipping: $file, $new_file already exists" >&2
@@ -98,9 +150,38 @@ cmd_replace() {
 }
 
 main() {
+	while [[ "$#" -gt 0 ]]; do
+		case "$1" in
+		--exif)
+			USE_EXIF=1
+			shift
+			;;
+		-h | --help)
+			usage
+			exit 0
+			;;
+		--)
+			shift
+			break
+			;;
+		-*)
+			echo "Unknown option: $1" >&2
+			usage >&2
+			exit 2
+			;;
+		*)
+			break
+			;;
+		esac
+	done
+
 	if [[ "$#" -eq 0 ]]; then
 		usage >&2
 		exit 2
+	fi
+
+	if [[ "$USE_EXIF" -eq 1 ]]; then
+		need_cmd exiftool
 	fi
 
 	local command="$1"
@@ -116,7 +197,7 @@ main() {
 	replace)
 		cmd_replace "$@"
 		;;
-	-h | --help | help)
+	help)
 		usage
 		;;
 	*)
