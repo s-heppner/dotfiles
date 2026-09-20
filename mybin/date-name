@@ -20,9 +20,13 @@
 #
 #   sudo apt install libimage-exiftool-perl
 #
-# Files carrying no such tag print a warning and fall back to mtime. The
-# metadata timestamp is naive local time and is used verbatim, without any
-# timezone conversion.
+# Files carrying no such tag print a warning and fall back to mtime.
+#
+# EXIF DateTimeOriginal (photos) is naive local time and is used verbatim.
+# QuickTime/MP4 CreateDate (videos) is UTC by spec and carries no timezone,
+# so exiftool converts it using this machine's timezone. That is only right
+# if the video was shot in the same zone; a warning is printed per video.
+# For a batch from elsewhere, override the zone: TZ=Europe/Lisbon date-name ...
 
 set -euo pipefail
 
@@ -67,8 +71,11 @@ file_timestamp() {
 		# One tag per call: with several tags at once, exiftool does not
 		# guarantee the output order, so the fallback order would be lost.
 		for tag in "${EXIF_TAGS[@]}"; do
-			stamp=$(exiftool -d "$fmt" -s3 "$tag" -- "$file" 2>/dev/null) || stamp=""
+			stamp=$(exiftool -api QuickTimeUTC=1 -d "$fmt" -s3 "$tag" -- "$file" 2>/dev/null) || stamp=""
 			if [[ -n "$stamp" ]]; then
+				if [[ "$tag" == "-CreateDate" ]]; then
+					echo "Warning: $file: video time converted from UTC using this machine's timezone" >&2
+				fi
 				echo "$stamp"
 				return
 			fi
