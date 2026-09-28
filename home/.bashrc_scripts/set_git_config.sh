@@ -4,7 +4,7 @@
 # Tab-completion for set_git_config.
 #
 # The candidate list comes from `set_git_config names`, so the files in
-# ~/.config/set_git_config/<name>.conf stay the single source of truth.
+# ~/.config/s-heppner/set_git_config/<name>.conf stay the single source of truth.
 
 if [ -f ~/.mybin/set_git_config ]; then
     _set_git_config_complete() {

@@ -2,7 +2,7 @@
 #
 # (2026-07-05, s-heppner)
 # Colors are defined as base16 palettes (base00..base0F). Each palette lives in
-# its own data file at `~/.config/base16/themes/<name>.sh` and declares
+# its own data file at `~/.config/s-heppner/base16/themes/<name>.sh` and declares
 # BASE00..BASE0F as 6-digit RGB hex. This loader turns the active palette into
 # the ANSI escape variables (COLOR_*) used by the prompt and into LS_COLORS.
 #
@@ -13,7 +13,7 @@
 # Where palettes live and where the active choice is remembered. Both honour a
 # pre-set value (useful for testing) and fall back to XDG defaults. Plain
 # assignment keeps this file safe to re-source.
-BASE16_THEMES_DIR="${BASE16_THEMES_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/base16/themes}"
+BASE16_THEMES_DIR="${BASE16_THEMES_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/s-heppner/base16/themes}"
 BASE16_STATE_FILE="${BASE16_STATE_FILE:-${XDG_STATE_HOME:-$HOME/.local/state}/base16-theme}"
 _BCS_DEFAULT_THEME="nord"
 
@@ -145,7 +145,7 @@ usage:
   base16-color-scheme <name>        shorthand for `set <name>`
   base16-color-scheme help          show this help
 
-Palettes live in ~/.config/base16/themes/<name>.sh
+Palettes live in ~/.config/s-heppner/base16/themes/<name>.sh
 EOF
 }
 

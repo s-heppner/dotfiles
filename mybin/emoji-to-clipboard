@@ -23,9 +23,9 @@
 #   emoji-to-clipboard thin     -> 🤔, unique substring
 #   emoji-to-clipboard -p joy   -> 😂 on stdout
 #
-# The table lives in $EMOJI_FILE (default ~/.config/emoji/emoji.tsv, deployed
-# from home/.config/emoji/ in the dotfiles repo). It is tab-separated, with an
-# optional third field of space-separated aliases:
+# The table lives in $EMOJI_FILE (default ~/.config/s-heppner/emoji/emoji.tsv,
+# deployed from home/.config/s-heppner/emoji/ in the dotfiles repo). It is
+# tab-separated, with an optional third field of space-separated aliases:
 #
 #   😅	sweat-smile	phew relief nervous
 #   🎉	party	tada celebrate hooray
@@ -37,7 +37,7 @@
 
 set -euo pipefail
 
-EMOJI_FILE="${EMOJI_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/emoji/emoji.tsv}"
+EMOJI_FILE="${EMOJI_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/s-heppner/emoji/emoji.tsv}"
 
 usage() {
   echo "Usage: $(basename "$0") [-p] <name>"

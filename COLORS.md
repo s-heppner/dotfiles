@@ -9,7 +9,7 @@ default, with **Everforest Dark Hard** shipped as a second example.
 
 | What | Path |
 | --- | --- |
-| Palette definitions | `home/.config/base16/themes/<name>.sh` → `~/.config/base16/themes/` |
+| Palette definitions | `home/.config/s-heppner/base16/themes/<name>.sh` → `~/.config/s-heppner/base16/themes/` |
 | Loader (bash) | `home/.bashrc_scripts/colors.sh` |
 | Loader (tmux) | `mybin/base16-tmux`, wired up in `home/.tmux.conf` |
 | Active palette (per machine) | `${XDG_STATE_HOME:-~/.local/state}/base16-theme` |
@@ -58,7 +58,7 @@ In tmux, every slot is a user option `#{@base16_00}`…`#{@base16_0F}`.
 
 ## Adding a palette
 
-Drop a new file in `home/.config/base16/themes/`, e.g. `my-palette.sh`,
+Drop a new file in `home/.config/s-heppner/base16/themes/`, e.g. `my-palette.sh`,
 declaring all 16 slots as 6-digit RGB hex (the values below are placeholders):
 
 ```sh

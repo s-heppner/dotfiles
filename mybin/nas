@@ -7,9 +7,9 @@
 #
 # This script expects a private config file at:
 #
-#   ~/.nas.env
+#   ~/.config/s-heppner/nas/nas.env
 #
-# Create it with values like:
+# (override the path with $NAS_ENV_FILE). Create it with values like:
 #
 #   MOUNTPOINT="/mnt/..."  # The path on the local machine to mount to
 #   REMOTE_PATH="/mnt/lvDefault"  # The path on the remote machine to be mounted to MOUNTPOINT
@@ -30,7 +30,7 @@
 
 set -euo pipefail
 
-readonly ENV_FILE="${HOME}/.nas.env"
+readonly ENV_FILE="${NAS_ENV_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/s-heppner/nas/nas.env}"
 
 usage() {
   echo "Usage: $(basename "$0") [mount|unmount|toggle|status]"

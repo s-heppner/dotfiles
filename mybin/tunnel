@@ -2,11 +2,12 @@
 #
 # Manage named SSH tunnels.
 #
-# Each tunnel is defined in its own file: ~/.config/tunnel/<name>.conf
-# (override the directory with $TUNNEL_CONF_DIR). The file is sourced and
-# must set all of the following variables.
+# Each tunnel is defined in its own file:
+# ~/.config/s-heppner/tunnel/<name>.conf (override the directory with
+# $TUNNEL_CONF_DIR). The file is sourced and must set all of the following
+# variables.
 #
-# Example (~/.config/tunnel/home-assistant.conf):
+# Example (~/.config/s-heppner/tunnel/home-assistant.conf):
 #
 #   LOCAL_HOST=127.0.0.1
 #   LOCAL_PORT=8123
@@ -26,7 +27,7 @@
 
 set -euo pipefail
 
-readonly CONF_DIR="${TUNNEL_CONF_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/tunnel}"
+readonly CONF_DIR="${TUNNEL_CONF_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/s-heppner/tunnel}"
 
 usage() {
   echo "Usage: $(basename "$0") <name> [up|down|toggle|status]"

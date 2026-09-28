@@ -4,7 +4,7 @@
 # Tab-completion for tunnel.
 #
 # The candidate list comes from `tunnel names`, so the files in
-# ~/.config/tunnel/<name>.conf stay the single source of truth.
+# ~/.config/s-heppner/tunnel/<name>.conf stay the single source of truth.
 
 if [ -f ~/.mybin/tunnel ]; then
     _tunnel_complete() {

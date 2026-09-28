@@ -3,12 +3,13 @@
 # Set the git identity (user.name and user.email) of the current repository
 # from a named profile.
 #
-# Each profile is defined in its own file: ~/.config/set_git_config/<name>.conf
-# (override the directory with $SET_GIT_CONFIG_DIR). The file is sourced and
-# must set all of the following variables. The profiles live outside this repo,
-# so no identity is committed here.
+# Each profile is defined in its own file:
+# ~/.config/s-heppner/set_git_config/<name>.conf (override the directory with
+# $SET_GIT_CONFIG_DIR). The file is sourced and must set all of the following
+# variables. The profiles live outside this repo, so no identity is committed
+# here.
 #
-# Example (~/.config/set_git_config/private.conf):
+# Example (~/.config/s-heppner/set_git_config/private.conf):
 #
 #   NAME="Jane Doe"
 #   EMAIL=jane@example.com
@@ -23,7 +24,7 @@
 
 set -euo pipefail
 
-readonly CONF_DIR="${SET_GIT_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/set_git_config}"
+readonly CONF_DIR="${SET_GIT_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/s-heppner/set_git_config}"
 
 usage() {
   echo "Usage: $(basename "$0") <profile>"

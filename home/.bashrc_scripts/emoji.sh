@@ -4,7 +4,7 @@
 # Tab-completion for emoji-to-clipboard (and its `e` alias).
 #
 # The candidate list comes from `emoji-to-clipboard names`, so the emoji table
-# in ~/.config/emoji/emoji.tsv stays the single source of truth.
+# in ~/.config/s-heppner/emoji/emoji.tsv stays the single source of truth.
 
 if [ -f ~/.mybin/emoji-to-clipboard ]; then
     _emoji_complete() {
