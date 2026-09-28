@@ -2,38 +2,36 @@
 #
 # Manage named SSH tunnels.
 #
-# Config file: ~/.tunnel.conf
+# Each tunnel is defined in its own file: ~/.config/tunnel/<name>.conf
+# (override the directory with $TUNNEL_CONF_DIR). The file is sourced and
+# must set all of the following variables.
 #
-# Example:
+# Example (~/.config/tunnel/home-assistant.conf):
 #
-#   [home-assistant]
 #   LOCAL_HOST=127.0.0.1
 #   LOCAL_PORT=8123
 #   REMOTE_HOST=192.168.1.2
 #   REMOTE_PORT=8123
 #   SSH_HOST=home
 #
-#   [lm-studio]
-#   LOCAL_HOST=127.0.0.1
-#   LOCAL_PORT=1234
-#   REMOTE_HOST=192.168.1.2
-#   REMOTE_PORT=1234
-#   SSH_HOST=home
-#
 # Usage:
 #
 #   tunnel <name> [up|down|toggle|status]
 #   tunnel list
+#   tunnel names
+#
+# Tab-completion is provided by ~/.bashrc_scripts/tunnel.sh.
 #
 # PID files are stored as ~/.tunnel-<name>.pid
 
 set -euo pipefail
 
-readonly CONF_FILE="${HOME}/.tunnel.conf"
+readonly CONF_DIR="${TUNNEL_CONF_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/tunnel}"
 
 usage() {
   echo "Usage: $(basename "$0") <name> [up|down|toggle|status]"
   echo "       $(basename "$0") list"
+  echo "       $(basename "$0") names"
 }
 
 die() {
@@ -41,14 +39,13 @@ die() {
   exit 1
 }
 
-check_conf_file() {
-  if [[ ! -f "$CONF_FILE" ]]; then
+check_conf_dir() {
+  if [[ ! -d "$CONF_DIR" ]]; then
     cat >&2 <<EOF
-Error: missing config file: $CONF_FILE
+Error: missing config directory: $CONF_DIR
 
-Create it with one or more tunnel sections, e.g.:
+Create one file per tunnel, e.g. $CONF_DIR/home-assistant.conf:
 
-  [home-assistant]
   LOCAL_HOST=127.0.0.1
   LOCAL_PORT=8123
   REMOTE_HOST=192.168.1.2
@@ -61,33 +58,33 @@ EOF
   fi
 }
 
+# List configured tunnel names (basename without .conf), one per line.
+list_names() {
+  local file name
+  [[ -d "$CONF_DIR" ]] || return 0
+  for file in "$CONF_DIR"/*.conf; do
+    [[ -e "$file" ]] || continue
+    name="${file##*/}"
+    echo "${name%.conf}"
+  done
+}
+
 load_tunnel() {
   local name="$1"
-  local in_section=0
+  local conf="${CONF_DIR}/${name}.conf"
 
-  while IFS= read -r line; do
-    [[ "$line" =~ ^[[:space:]]*# || -z "${line// /}" ]] && continue
+  [[ -f "$conf" ]] || die "no tunnel named '$name' in $CONF_DIR"
 
-    if [[ "$line" =~ ^\[(.+)\]$ ]]; then
-      [[ $in_section -eq 1 ]] && break
-      [[ "${BASH_REMATCH[1]}" == "$name" ]] && in_section=1
-      continue
-    fi
-
-    if [[ $in_section -eq 1 && "$line" =~ ^([A-Z_]+)=(.*)$ ]]; then
-      eval "${BASH_REMATCH[1]}=${BASH_REMATCH[2]}"
-    fi
-  done <"$CONF_FILE"
-
-  [[ $in_section -eq 0 ]] && die "no tunnel named '$name' in $CONF_FILE"
+  # shellcheck source=/dev/null
+  source "$conf"
 
   PID_FILE="${HOME}/.tunnel-${name}.pid"
 
-  : "${LOCAL_HOST:?missing LOCAL_HOST for [$name] in $CONF_FILE}"
-  : "${LOCAL_PORT:?missing LOCAL_PORT for [$name] in $CONF_FILE}"
-  : "${REMOTE_HOST:?missing REMOTE_HOST for [$name] in $CONF_FILE}"
-  : "${REMOTE_PORT:?missing REMOTE_PORT for [$name] in $CONF_FILE}"
-  : "${SSH_HOST:?missing SSH_HOST for [$name] in $CONF_FILE}"
+  : "${LOCAL_HOST:?missing LOCAL_HOST in $conf}"
+  : "${LOCAL_PORT:?missing LOCAL_PORT in $conf}"
+  : "${REMOTE_HOST:?missing REMOTE_HOST in $conf}"
+  : "${REMOTE_PORT:?missing REMOTE_PORT in $conf}"
+  : "${SSH_HOST:?missing SSH_HOST in $conf}"
 }
 
 need_cmd() {
@@ -177,18 +174,23 @@ tunnel_list() {
     else
       echo "  ${name}  [stopped]"
     fi
-  done < <(grep -E '^\[.+\]$' "$CONF_FILE" | sed 's/^\[//;s/\]$//' || true)
+  done < <(list_names)
 }
 
 main() {
   case "${1:-}" in
-    -h | --help)
+    -h | --help | help)
       usage
+      exit 0
+      ;;
+    names)
+      # Used by tab-completion, so stay quiet if nothing is configured.
+      list_names
       exit 0
       ;;
   esac
 
-  check_conf_file
+  check_conf_dir
 
   local tunnel_name="${1:-}"
   local subcommand="${2:-toggle}"
