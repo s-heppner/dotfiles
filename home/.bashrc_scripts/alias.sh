@@ -72,13 +72,5 @@ if [ -f ~/.mybin/open-repo-in-browser ]; then
     alias gito='open-repo-in-browser'
 fi
 
-# aliases for content-spec
-if [ -f ~/.mybin/content-spec ]; then
-    alias c='content-spec show'
-    alias ca='content-spec all'
-    alias ctree='content-spec tree'
-    alias cm='content-spec edit'
-fi
-
 # alias for base16-color-scheme
 alias color-scheme='base16-color-scheme'
