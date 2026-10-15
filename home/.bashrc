@@ -96,6 +96,8 @@ fi
 export PATH="$HOME/bin:$PATH"
 # Add `~/.local/bin` to the `PATH` variable
 export PATH="$HOME/.local/bin:$PATH"
+# Add the `opencode` install directory to the `PATH` variable
+export PATH="$HOME/.opencode/bin:$PATH"
 # Also add my custom scripts folder to path
 export PATH="$HOME/.mybin:$PATH"
 
