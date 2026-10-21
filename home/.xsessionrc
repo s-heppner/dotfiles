@@ -1,0 +1,9 @@
+# Read by `/etc/X11/Xsession` (Debian's LightDM) when the graphical session starts, which does
+# not read `~/.profile` or `~/.bashrc`. Sourced by `/bin/sh` under `set -e`, so keep it POSIX
+# and make sure nothing in here can fail: an error aborts the login.
+
+# Let desktop entries (app menu, "Open With") find programs installed with `pipx`, `uv tool`
+# or `pip --user`. GLib hides any entry whose `Exec` program is not on the session's `PATH`.
+if [ -d "$HOME/.local/bin" ]; then
+    PATH="$HOME/.local/bin:$PATH"
+fi

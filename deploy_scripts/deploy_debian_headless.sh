@@ -16,6 +16,8 @@ DOTFILE_DIR=$(dirname "$(pwd)")
 # Bash
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.bashrc ${HOME}/.bashrc
 ./symlink_dotfile.sh ${DOTFILE_DIR}/home/.bashrc_scripts ${HOME}/.bashrc_scripts
+# Graphical session environment (only read by `/etc/X11/Xsession`, harmless headless)
+./symlink_dotfile.sh ${DOTFILE_DIR}/home/.xsessionrc ${HOME}/.xsessionrc
 # Configs of my own scripts live in `~/.config/s-heppner/<script>/`. The
 # directory itself is not a symlink, so it can also hold private, untracked
 # configs (e.g. for `tunnel`, `set_git_config`, `nas`).

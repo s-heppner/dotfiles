@@ -23,6 +23,8 @@ However, the following is what I think is of note:
 - **Bash**: Pretty extensive bash configuration, including: 
 	- `home/.bashrc`, 
 	- `home/.bashrc_scripts`
+- **Graphical session**: `home/.xsessionrc` puts `~/.local/bin` on the
+	`PATH` of the desktop session, so its app menu finds `pipx`-installed programs
 - **Colors**: [base16](https://github.com/chriskempson/base16) terminal
 	palettes shared by bash and tmux, switchable at runtime with the
 	`base16-color-scheme` command. See [COLORS.md](./COLORS.md).
