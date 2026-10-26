@@ -23,7 +23,16 @@
 #
 # Tab-completion is provided by ~/.bashrc_scripts/tunnel.sh.
 #
-# PID files are stored as ~/.tunnel-<name>.pid
+# `up` starts a detached supervisor that runs ssh in a loop: whenever the
+# connection dies (network change, remote closes it, sleep/resume), it waits
+# with a capped backoff and reconnects, until `down` is called. ssh runs with
+# BatchMode=yes, so the SSH_HOST must be reachable with key auth. `up` adds
+# missing keys for SSH_HOST and its ProxyJump hosts to the current ssh-agent
+# and asks for their passphrases. If no agent is reachable, it starts one for
+# the tunnel, which is stopped again with the tunnel.
+#
+# The supervisor PID is stored as ~/.tunnel-<name>.pid, its log as
+# ~/.tunnel-<name>.log
 
 set -euo pipefail
 
@@ -79,7 +88,9 @@ load_tunnel() {
   # shellcheck source=/dev/null
   source "$conf"
 
+  TUNNEL_NAME="$name"
   PID_FILE="${HOME}/.tunnel-${name}.pid"
+  LOG_FILE="${HOME}/.tunnel-${name}.log"
 
   : "${LOCAL_HOST:?missing LOCAL_HOST in $conf}"
   : "${LOCAL_PORT:?missing LOCAL_PORT in $conf}"
@@ -100,13 +111,178 @@ is_running() {
   kill -0 "$pid" >/dev/null 2>&1
 }
 
+# Succeed if the supervisor's ssh is up and listening on the local port.
+# ssh only opens the -L listener after it logged in successfully.
+is_connected() {
+  local pid listeners
+  pid="$(pgrep -P "$(cat "$PID_FILE")" -x ssh | head -n 1 || true)"
+  [[ -n "$pid" ]] || return 1
+  listeners="$(ss -Hltnp "sport = :${LOCAL_PORT}" 2>/dev/null || true)"
+  [[ "$listeners" == *"pid=${pid},"* ]]
+}
+
+# Print one of: stopped, connecting, connected.
+tunnel_state() {
+  if ! is_running; then
+    echo "stopped"
+  elif is_connected; then
+    echo "connected"
+  else
+    echo "connecting"
+  fi
+}
+
+# Print the state of the loaded tunnel, with recent log lines if not connected.
+print_state() {
+  case "$(tunnel_state)" in
+    stopped)
+      echo "Tunnel not running."
+      ;;
+    connected)
+      echo "Tunnel connected."
+      echo "PID: $(cat "$PID_FILE")"
+      echo "URL: http://${LOCAL_HOST}:${LOCAL_PORT}"
+      ;;
+    connecting)
+      echo "Tunnel running, but NOT connected. Retrying in the background."
+      echo "PID: $(cat "$PID_FILE")"
+      echo "Log: $LOG_FILE"
+      if [[ -f "$LOG_FILE" ]]; then
+        tail -n 5 "$LOG_FILE" | sed 's/^/  /'
+      fi
+      ;;
+  esac
+}
+
+log() {
+  echo "$(date '+%F %T') $*"
+}
+
+# Run ssh in a loop until terminated. Started detached by tunnel_up.
+tunnel_supervise() {
+  local child="" delay=1 started rc
+
+  echo "$$" >"$PID_FILE"
+
+  stop() {
+    log "stopping"
+    if [[ -n "$child" ]]; then
+      kill "$child" 2>/dev/null || true
+    fi
+    if [[ -n "${TUNNEL_AGENT_PID:-}" ]]; then
+      kill "$TUNNEL_AGENT_PID" 2>/dev/null || true
+    fi
+    rm -f "$PID_FILE"
+    exit 0
+  }
+  trap stop TERM INT HUP
+
+  while true; do
+    started=$SECONDS
+    # Fail instead of prompting, also in ProxyJump hops (they ignore BatchMode).
+    SSH_ASKPASS_REQUIRE=never ssh -N \
+      -L "${LOCAL_HOST}:${LOCAL_PORT}:${REMOTE_HOST}:${REMOTE_PORT}" \
+      -o ExitOnForwardFailure=yes \
+      -o ServerAliveInterval=10 \
+      -o ServerAliveCountMax=3 \
+      -o ConnectTimeout=10 \
+      -o BatchMode=yes \
+      "$SSH_HOST" &
+    child=$!
+    log "connecting (ssh PID $child)"
+
+    # Waiting on a background job lets the trap fire immediately.
+    rc=0
+    wait "$child" || rc=$?
+    child=""
+
+    # Reset the backoff if the connection was up for a while.
+    if ((SECONDS - started > 60)); then
+      delay=1
+    fi
+    log "ssh exited with code $rc, retrying in ${delay}s"
+    sleep "$delay" &
+    wait $! || true
+    delay=$((delay * 2 > 30 ? 30 : delay * 2))
+  done
+}
+
+# Print the existing identity files ssh would use for the given host,
+# including those of its ProxyJump hosts.
+identity_files() {
+  local host="$1" depth="${2:-0}" option value hop
+  local -a hops
+
+  # Guard against ProxyJump loops.
+  ((depth < 5)) || return 0
+
+  while read -r option value; do
+    case "$option" in
+      identityfile)
+        value="${value/#\~/$HOME}"
+        if [[ -f "$value" ]]; then
+          echo "$value"
+        fi
+        ;;
+      proxyjump)
+        [[ "$value" != none ]] || continue
+        IFS=, read -ra hops <<<"$value"
+        for hop in "${hops[@]}"; do
+          # The URI form also accepts user@host:port.
+          identity_files "ssh://${hop}" $((depth + 1))
+        done
+        ;;
+    esac
+  done < <(ssh -G "$host" 2>/dev/null)
+}
+
+# Make sure an ssh-agent holds the keys for SSH_HOST (and its jump hosts), so
+# the detached ssh can log in without a prompt. Missing keys are added to the
+# current agent (asking for the passphrases). Only if no agent is reachable, a
+# dedicated one is started for the tunnel.
+ensure_agent() {
+  local -a keys missing=()
+  local key fingerprint loaded rc=0
+
+  mapfile -t keys < <(identity_files "$SSH_HOST" | sort -u)
+  # Nothing to load, ssh has to manage on its own.
+  ((${#keys[@]} > 0)) || return 0
+
+  # Exit code 2 means there is no agent to talk to.
+  loaded="$(ssh-add -l 2>/dev/null)" || rc=$?
+  if ((rc == 2)); then
+    need_cmd ssh-agent
+    eval "$(ssh-agent -s)" >/dev/null
+    export TUNNEL_AGENT_PID="$SSH_AGENT_PID"
+    loaded=""
+  fi
+
+  for key in "${keys[@]}"; do
+    fingerprint="$(ssh-keygen -lf "$key" 2>/dev/null | awk '{ print $2 }')"
+    if [[ -z "$fingerprint" || "$loaded" != *"$fingerprint"* ]]; then
+      missing+=("$key")
+    fi
+  done
+  ((${#missing[@]} > 0)) || return 0
+
+  echo "Adding keys for ${SSH_HOST} to the ssh-agent."
+  if ! ssh-add "${missing[@]}"; then
+    if [[ -n "${TUNNEL_AGENT_PID:-}" ]]; then
+      kill "$TUNNEL_AGENT_PID" 2>/dev/null || true
+    fi
+    die "could not add keys to ssh-agent"
+  fi
+}
+
 tunnel_up() {
   need_cmd ssh
+  need_cmd ssh-add
+  need_cmd ssh-keygen
+  need_cmd setsid
+  need_cmd ss
 
   if is_running; then
-    echo "Tunnel already running."
-    echo "PID: $(cat "$PID_FILE")"
-    echo "URL: http://${LOCAL_HOST}:${LOCAL_PORT}"
+    print_state
     exit 0
   fi
 
@@ -117,26 +293,31 @@ tunnel_up() {
   echo "  remote: ${REMOTE_HOST}:${REMOTE_PORT}"
   echo "  ssh:    ${SSH_HOST}"
 
-  ssh -fN \
-    -L "${LOCAL_HOST}:${LOCAL_PORT}:${REMOTE_HOST}:${REMOTE_PORT}" \
-    -o ExitOnForwardFailure=yes \
-    -o ServerAliveInterval=15 \
-    -o ServerAliveCountMax=3 \
-    "$SSH_HOST"
+  ensure_agent
 
-  # Find the tunnel process. Yes, this is ugly. So is process management in shell.
-  local pid
-  pid="$(pgrep -f "ssh .*${LOCAL_HOST}:${LOCAL_PORT}:${REMOTE_HOST}:${REMOTE_PORT}.*${SSH_HOST}" | head -n 1 || true)"
+  # Detach from the terminal, so closing the shell does not stop the tunnel.
+  setsid "$0" "$TUNNEL_NAME" __supervise >"$LOG_FILE" 2>&1 </dev/null &
 
-  if [[ -z "$pid" ]]; then
-    die "tunnel seems to have started, but could not find SSH process"
+  local _
+  for _ in {1..20}; do
+    [[ -s "$PID_FILE" ]] && break
+    sleep 0.1
+  done
+  if ! is_running; then
+    if [[ -n "${TUNNEL_AGENT_PID:-}" ]]; then
+      kill "$TUNNEL_AGENT_PID" 2>/dev/null || true
+    fi
+    die "supervisor did not start, see $LOG_FILE"
   fi
 
-  echo "$pid" >"$PID_FILE"
+  # Wait for the first connection, or until the first attempt failed.
+  for _ in {1..30}; do
+    is_connected && break
+    grep -q "ssh exited" "$LOG_FILE" && break
+    sleep 0.5
+  done
 
-  echo "Tunnel started."
-  echo "PID: $pid"
-  echo "URL: http://${LOCAL_HOST}:${LOCAL_PORT}"
+  print_state
 }
 
 tunnel_down() {
@@ -156,25 +337,26 @@ tunnel_down() {
 }
 
 tunnel_status() {
-  if is_running; then
-    echo "Tunnel running."
-    echo "PID: $(cat "$PID_FILE")"
-    echo "URL: http://${LOCAL_HOST}:${LOCAL_PORT}"
-  else
-    echo "Tunnel not running."
+  need_cmd ss
+  print_state
+  if ! is_running; then
     rm -f "$PID_FILE"
   fi
 }
 
 tunnel_list() {
   local name
+  need_cmd ss
   while IFS= read -r name; do
-    PID_FILE="${HOME}/.tunnel-${name}.pid"
-    if is_running; then
-      echo "  ${name}  [running, PID $(cat "$PID_FILE")]"
-    else
-      echo "  ${name}  [stopped]"
-    fi
+    # Subshell, so each tunnel's config does not leak into the next.
+    (
+      load_tunnel "$name"
+      if is_running; then
+        echo "  ${name}  [$(tunnel_state), PID $(cat "$PID_FILE")]"
+      else
+        echo "  ${name}  [stopped]"
+      fi
+    )
   done < <(list_names)
 }
 
@@ -221,6 +403,9 @@ main() {
       ;;
     status)
       tunnel_status
+      ;;
+    __supervise)
+      tunnel_supervise
       ;;
     *)
       usage >&2
