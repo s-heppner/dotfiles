@@ -72,5 +72,11 @@ if [ -f ~/.mybin/open-repo-in-browser ]; then
     alias gito='open-repo-in-browser'
 fi
 
+# (2026-10-31, s-heppner)
+# alias for git-merged
+if [ -f ~/.mybin/git-merged ]; then
+    alias gitm='git-merged'
+fi
+
 # alias for base16-color-scheme
 alias color-scheme='base16-color-scheme'

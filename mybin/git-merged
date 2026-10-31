@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+#
+# Clean up after a pull request was merged: check out the target branch, pull
+# it, and delete the branch that was checked out before.
+#
+# The branch is deleted with `git branch -D`, because `-d` does not detect
+# squash or rebase merges. There is no check if the branch was really merged;
+# a y/N prompt asks before the deletion.
+#
+# Because ~/.mybin is on the PATH, git also runs this as `git merged`.
+#
+# How to use:
+#
+#   git-merged [target]
+#
+#   target   branch to check out (default: the default branch of origin)
+#
+# Tab-completion is provided by ~/.bashrc_scripts/git_merged.sh.
+
+set -euo pipefail
+
+usage() {
+	echo "Usage: $(basename "$0") [target]"
+}
+
+die() {
+	echo "Error: $*" >&2
+	exit 1
+}
+
+# default_branch
+#
+# Prints the default branch of origin (the target of origin/HEAD).
+default_branch() {
+	local ref
+	ref=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD) ||
+		die "origin/HEAD is not set; pass a target or run: git remote set-head origin --auto"
+	echo "${ref#origin/}"
+}
+
+main() {
+	case "${1:-}" in
+	-h | --help)
+		usage
+		exit 0
+		;;
+	-*)
+		usage >&2
+		exit 2
+		;;
+	esac
+	if (($# > 1)); then
+		usage >&2
+		exit 2
+	fi
+
+	local branch
+	branch=$(git symbolic-ref --quiet --short HEAD) ||
+		die "not on a branch (detached HEAD?)"
+
+	local target
+	if (($# == 1)); then
+		target="$1"
+	else
+		target=$(default_branch)
+	fi
+
+	[[ "$branch" != "$target" ]] || die "already on '${target}', nothing to delete"
+
+	git checkout "$target"
+	git pull
+
+	local answer
+	read -rp "Delete branch '${branch}'? [y/N] " answer
+	if [[ "$answer" == [yY] ]]; then
+		git branch -D "$branch"
+	else
+		echo "Kept branch '${branch}'."
+	fi
+}
+
+main "$@"
